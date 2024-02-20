@@ -6,12 +6,12 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -26,6 +26,9 @@ import java.util.Objects;
 )
 public class Application extends BaseEntity implements HasEndpoint {
 
+    // uuid of application in super class
+    private UUID remoteApplicationUUID; // the id on the local edge device
+    private UUID nodeUUID; // the nodeUUID of the edge device (global id), not on the local edge device
     private String name;
     @OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.MERGE, CascadeType.REMOVE }, mappedBy = "application")
     private List<ApplicationComponent> applicationComponents;

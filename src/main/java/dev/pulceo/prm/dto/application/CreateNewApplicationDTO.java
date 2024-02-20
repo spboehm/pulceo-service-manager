@@ -5,6 +5,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Getter
@@ -13,6 +14,7 @@ import java.util.List;
 @SuperBuilder
 public class CreateNewApplicationDTO {
 
+    private UUID nodeUUID;
     private String name;
     @Builder.Default
     private List<CreateNewApplicationComponentDTO> applicationComponents = new ArrayList<>();

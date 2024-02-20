@@ -6,6 +6,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Getter
@@ -21,5 +22,6 @@ public class CreateNewApplicationComponentDTO {
     private ApplicationComponentType applicationComponentType;
     @Builder.Default
     private Map<String, String> environmentVariables = new HashMap<>();
+
 
 }
