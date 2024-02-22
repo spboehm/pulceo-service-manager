@@ -9,6 +9,7 @@ import dev.pulceo.prm.repository.ApplicationComponentRepository;
 import dev.pulceo.prm.repository.ApplicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.convert.Jsr310Converters;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -51,6 +52,7 @@ public class ApplicationService {
         WebClient webClientToPNA = WebClient.create("http://" + srcNode.getHostname() + ":" + "7676");
         ApplicationDTO applicationDTO = webClientToPNA.post()
                 .uri("/api/v1/applications")
+                .header("Authorization", "Basic " + getPnaTokenByNodeUUID(srcNode.getUuid()))
                 .bodyValue(application)
                 .retrieve()
                 .bodyToMono(ApplicationDTO.class)
@@ -71,6 +73,19 @@ public class ApplicationService {
             }
         }
         return persistedApplication;
+    }
+
+    private String getPnaTokenByNodeUUID(UUID nodeUUID) {
+        WebClient webClient = WebClient.create(this.prmEndpoint);
+        String pnaToken = webClient.get()
+                .uri("/api/v1/nodes/" + nodeUUID + "/pna-token")
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(error -> {
+                    throw new RuntimeException(new ApplicationServiceException("Can not create link: Source node with id %s does not exist!".formatted(nodeUUID)));
+                })
+                .block();
+        return pnaToken;
     }
 
     public ApplicationComponent createApplicationComponent(Application application, ApplicationComponent applicationComponent) throws ApplicationServiceException {
@@ -133,6 +148,7 @@ public class ApplicationService {
         WebClient webClientToPNA = WebClient.create("http://" + srcNode.getHostname() + ":" + "7676");
         webClientToPNA.delete()
                 .uri("/api/v1/applications/" + application.getRemoteApplicationUUID())
+                .header("Authorization", "Basic " + getPnaTokenByNodeUUID(srcNode.getUuid()))
                 .retrieve()
                 .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), response -> {
                     throw new RuntimeException(new ApplicationServiceException("Could not delete application"));
@@ -142,4 +158,6 @@ public class ApplicationService {
 
         this.applicationRepository.delete(application);
     }
+
+
 }
