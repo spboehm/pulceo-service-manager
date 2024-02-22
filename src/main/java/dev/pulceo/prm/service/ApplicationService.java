@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ApplicationService {
@@ -104,5 +104,42 @@ public class ApplicationService {
 
     private boolean isPortAlreadyInUse(int port) {
         return this.applicationComponentRepository.findByPort(port).isPresent();
+    }
+
+    public Optional<Application> readApplicationByUUID(UUID uuid) {
+        return this.applicationRepository.findByUuid(uuid);
+    }
+
+    public void deleteApplication(UUID uuid) throws ApplicationServiceException {
+        Optional<Application> optionalApplication = this.applicationRepository.findByUuid(uuid);
+
+        if (optionalApplication.isEmpty()) {
+            throw new ApplicationServiceException("Application with UUID " + uuid + " does not exist!");
+        }
+
+        Application application = optionalApplication.get();
+
+        // TODO: Webclient to pna, try to commit
+        WebClient webClientToPRM = WebClient.create(this.prmEndpoint);
+        NodeDTO srcNode = webClientToPRM.get()
+                .uri("/api/v1/nodes/" + application.getNodeUUID())
+                .retrieve()
+                .bodyToMono(NodeDTO.class)
+                .onErrorResume(error -> {
+                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeUUID())));
+                })
+                .block();
+
+        WebClient webClientToPNA = WebClient.create("http://" + srcNode.getHostname() + ":" + "7676");
+        webClientToPNA.delete()
+                .uri("/api/v1/applications/" + application.getRemoteApplicationUUID())
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), response -> {
+                    throw new RuntimeException(new ApplicationServiceException("Could not delete application"));
+                })
+                .bodyToMono(Void.class)
+                .block();
+
+        this.applicationRepository.delete(application);
     }
 }
