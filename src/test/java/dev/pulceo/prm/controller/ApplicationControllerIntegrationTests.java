@@ -84,6 +84,13 @@ public class ApplicationControllerIntegrationTests {
                         .withHeader("Content-Type", "application/json")
                         .withBodyFile("application/pna-create-application-without-application-components-response.json")));
 
+        // mock metric request to prm (pna-token)
+        ApplicationServiceIntegrationTests.wireMockServerForPRM.stubFor(WireMock.get(urlEqualTo("/api/v1/nodes/0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3/pna-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("")));
+
         // when and then
         this.mockMvc.perform(post("/api/v1/applications")
                         .contentType("application/json")
@@ -126,6 +133,13 @@ public class ApplicationControllerIntegrationTests {
                 .willReturn(aResponse()
                         .withStatus(204)
                         .withHeader("Content-Type", "application/json")));
+
+        // mock metric request to prm (pna-token)
+        ApplicationServiceIntegrationTests.wireMockServerForPRM.stubFor(WireMock.get(urlEqualTo("/api/v1/nodes/0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3/pna-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("")));
 
         MvcResult mvcResult = this.mockMvc.perform(post("/api/v1/applications")
                         .contentType("application/json")

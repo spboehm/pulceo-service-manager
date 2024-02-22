@@ -1,6 +1,7 @@
 package dev.pulceo.prm.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import dev.pulceo.prm.exception.ApplicationServiceException;
 import dev.pulceo.prm.model.application.Application;
 import dev.pulceo.prm.model.application.ApplicationComponent;
@@ -78,6 +79,13 @@ public class ApplicationServiceIntegrationTests {
                         .withHeader("Content-Type", "application/json")
                         .withBodyFile("application/pna-create-application-without-application-components-response.json")));
 
+        // mock metric request to prm (pna-token)
+        ApplicationServiceIntegrationTests.wireMockServerForPRM.stubFor(WireMock.get(urlEqualTo("/api/v1/nodes/0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3/pna-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("")));
+
         // when
         Application createdApplication = applicationService.createApplication(application);
 
@@ -125,6 +133,13 @@ public class ApplicationServiceIntegrationTests {
                         .withStatus(201)
                         .withHeader("Content-Type", "application/json")
                         .withBodyFile("application/pna-create-application-with-one-application-component-response.json")));
+
+        // mock metric request to prm (pna-token)
+        ApplicationServiceIntegrationTests.wireMockServerForPRM.stubFor(WireMock.get(urlEqualTo("/api/v1/nodes/0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3/pna-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("")));
 
         // when
         Application createdApplication = applicationService.createApplication(application);
