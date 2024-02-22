@@ -57,16 +57,16 @@ public class ApplicationService {
                 .block();
 
         // if return is positive, persist application
-        Application persistedApplication = this.applicationRepository.save(Application.fromApplicationDTO(srcNode.getUuid(), srcNode.getHostname(), applicationDTO));
-
+        Application receivedApplication = Application.fromApplicationDTO(srcNode.getUuid(), srcNode.getHostname(), applicationDTO);
+        Application persistedApplication = this.applicationRepository.save(receivedApplication);
         // only executed if element in list is present
-//        for (ApplicationComponent applicationComponent : application.getApplicationComponents()) {
-//            try {
-//                this.createApplicationComponent(persistedApplication, applicationComponent);
-//            } catch (ApplicationServiceException e) {
-//                throw new ApplicationServiceException("Could not create application!", e);
-//            }
-//        }
+        for (ApplicationComponent applicationComponent : receivedApplication.getApplicationComponents()) {
+            try {
+                this.createApplicationComponent(persistedApplication, applicationComponent);
+            } catch (ApplicationServiceException e) {
+                throw new ApplicationServiceException("Could not create application!", e);
+            }
+        }
         return persistedApplication;
     }
 
@@ -80,8 +80,8 @@ public class ApplicationService {
         if (this.isApplicationComponentAlreadyExisting(applicationComponent.getName()) || isPortAlreadyInUse(applicationComponent.getPort())) {
             throw new ApplicationServiceException(String.format("ApplicationComponent %s already exists", applicationComponent.getName()));
         }
-
-        return ApplicationComponent.builder().build();
+        applicationComponent.setApplication(persistedApplication.get());
+        return this.applicationComponentRepository.save(applicationComponent);
     }
 
     private boolean isApplicationAlreadyExisting(String name) {
