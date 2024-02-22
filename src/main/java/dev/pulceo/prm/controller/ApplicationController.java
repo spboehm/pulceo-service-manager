@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -22,6 +24,16 @@ public class ApplicationController {
     @Autowired
     public ApplicationController(ApplicationService applicationService) {
         this.applicationService = applicationService;
+    }
+
+    @GetMapping("")
+    public ResponseEntity<List<ApplicationDTO>> readAllApplications() {
+        List<Application> applications = applicationService.readAllApplications();
+        List<ApplicationDTO> applicationDTOs = new ArrayList<>();
+        for (Application application : applications) {
+            applicationDTOs.add(ApplicationDTO.fromApplication(application));
+        }
+        return ResponseEntity.status(200).body(applicationDTOs);
     }
 
     @PostMapping
