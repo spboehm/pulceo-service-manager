@@ -60,7 +60,12 @@ public class Application extends BaseEntity implements HasEndpoint {
     // TODO: fill with proper extension
     @Override
     public URI getEndpoint() {
-        return URI.create("https://test.com");
+        for (ApplicationComponent applicationComponent : applicationComponents) {
+            if (applicationComponent.getApplicationComponentType().equals(ApplicationComponentType.PUBLIC)) {
+                return applicationComponent.getEndpoint();
+            }
+        }
+        return URI.create("");
     }
 
     @Override

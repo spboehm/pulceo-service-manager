@@ -17,6 +17,7 @@ public class ApplicationComponentDTO {
 
     private String applicationComponentUUID;
     private String name;
+    private String endpoint;
     private String image;
     private int port;
     private String protocol;
@@ -28,6 +29,7 @@ public class ApplicationComponentDTO {
         return ApplicationComponentDTO.builder()
                 .applicationComponentUUID(String.valueOf(applicationComponent.getUuid()))
                 .name(applicationComponent.getName())
+                .endpoint(String.valueOf(applicationComponent.getEndpoint()))
                 .image(applicationComponent.getImage())
                 .port(applicationComponent.getPort())
                 .protocol(applicationComponent.getProtocol())

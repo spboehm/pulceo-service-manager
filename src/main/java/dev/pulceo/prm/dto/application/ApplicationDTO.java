@@ -16,7 +16,8 @@ import java.util.List;
 public class ApplicationDTO {
 
     private String applicationUUID; // local and remote id of the application
-    private String nodeUUID; // the nodeUUID of the edge device (global id), not on the local edge device
+    private String nodeUUID; // the nodeUUID of the edge device (global id), not on the local edge device, remove because this is ambiguous
+    private String endpoint; // the endpoint of the application
     private String name;
     @Builder.Default
     private List<ApplicationComponentDTO> applicationComponents = new ArrayList<>();
@@ -25,6 +26,7 @@ public class ApplicationDTO {
         return ApplicationDTO.builder()
                 .applicationUUID(String.valueOf(application.getUuid()))
                 .nodeUUID(String.valueOf(application.getNodeUUID()))
+                .endpoint(String.valueOf(application.getEndpoint()))
                 .name(application.getName())
                 .applicationComponents(application.getApplicationComponents().stream().map(ApplicationComponentDTO::fromApplicationComponent).toList())
                 .build();

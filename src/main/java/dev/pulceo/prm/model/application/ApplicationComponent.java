@@ -78,7 +78,11 @@ public class ApplicationComponent extends BaseEntity implements HasEndpoint {
 
     @Override
     public URI getEndpoint() {
-        return URI.create(this.getProtocol().toLowerCase() + "://" + this.nodeHost + ":" + this.getPort());
+        if (this.applicationComponentType == ApplicationComponentType.PRIVATE) {
+            return URI.create(this.getProtocol().toLowerCase() + "://" + this.application.getName() + "-" + this.getName() + ":" + this.getPort());
+        } else {
+            return URI.create(this.getProtocol().toLowerCase() + "://" + this.nodeHost + ":" + this.getPort());
+        }
     }
 
     @Override
