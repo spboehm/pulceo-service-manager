@@ -1,5 +1,6 @@
 package dev.pulceo.prm.service;
 
+import dev.pulceo.prm.dto.application.ApplicationDTO;
 import dev.pulceo.prm.dto.node.NodeDTO;
 import dev.pulceo.prm.exception.ApplicationServiceException;
 import dev.pulceo.prm.model.application.Application;
@@ -39,28 +40,28 @@ public class ApplicationService {
                 })
                 .block();
 
-//        WebClient webClientToPNA = WebClient.create(this.prmEndpoint);
-//        webClientToPNA.post()
-//                .uri("/api/v1/applications")
-//                .bodyValue(application)
-//                .retrieve()
-//                .bodyToMono(Application.class)
-//                .onErrorResume(error -> {
-//                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeUUID())));
-//                })
-//                .block();
+        WebClient webClientToPNA = WebClient.create("http://" + srcNode.getHostname() + ":" + "7676");
+        ApplicationDTO applicationDTO = webClientToPNA.post()
+                .uri("/api/v1/applications")
+                .bodyValue(application)
+                .retrieve()
+                .bodyToMono(ApplicationDTO.class)
+                .onErrorResume(error -> {
+                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeUUID())));
+                })
+                .block();
 
-        Application persistedApplicationWithoutServices = this.applicationRepository.save(application);
+        Application persistedApplication = this.applicationRepository.save(Application.fromApplicationDTO(srcNode.getUuid(), applicationDTO));
 
         for (ApplicationComponent applicationComponent : application.getApplicationComponents()) {
             try {
-                this.createApplicationComponent(persistedApplicationWithoutServices, applicationComponent);
+                this.createApplicationComponent(persistedApplication, applicationComponent);
             } catch (ApplicationServiceException e) {
                 throw new ApplicationServiceException("Could not create application!", e);
             }
         }
 
-        return persistedApplicationWithoutServices;
+        return persistedApplication;
     }
 
     public ApplicationComponent createApplicationComponent(Application persistedApplicationWithputServices, ApplicationComponent applicationComponent) throws ApplicationServiceException {

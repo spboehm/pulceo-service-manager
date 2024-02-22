@@ -26,11 +26,15 @@ public class ApplicationServiceIntegrationTests {
     private ApplicationRepository applicationRepository;
 
     public static WireMockServer wireMockServerForPRM = new WireMockServer(WireMockSpring.options().bindAddress("127.0.0.1").port(7878));
+    public static WireMockServer wireMockServerForPNA = new WireMockServer(WireMockSpring.options().bindAddress("127.0.0.1").port(7676));
+
 
     @BeforeAll
     static void setupClass() throws InterruptedException {
         Thread.sleep(100);
         ApplicationServiceIntegrationTests.wireMockServerForPRM.start();
+        ApplicationServiceIntegrationTests.wireMockServerForPNA.start();
+
     }
 
     @BeforeEach
@@ -41,6 +45,7 @@ public class ApplicationServiceIntegrationTests {
     @AfterAll
     public void tearDown() {
         ApplicationServiceIntegrationTests.wireMockServerForPRM.shutdown();
+        ApplicationServiceIntegrationTests.wireMockServerForPNA.shutdown();
         // applicationRepository.deleteAll();
     }
 
@@ -49,8 +54,9 @@ public class ApplicationServiceIntegrationTests {
         // given
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         Application application = Application.builder()
+                .remoteApplicationUUID(UUID.fromString("66ae631b-2dff-4334-b0fb-176e054ccbaa"))
                 .nodeUUID(nodeUUID)
-                .name("test-application")
+                .name("app-nginx")
                 .applicationComponents(new ArrayList<>())
                 .build();
 
@@ -62,7 +68,11 @@ public class ApplicationServiceIntegrationTests {
                         .withBodyFile("node/prm-read-node-by-uuid-response.json")));
 
         // mock request to pna
-
+        ApplicationServiceIntegrationTests.wireMockServerForPNA.stubFor(post(urlEqualTo("/api/v1/applications"))
+                .willReturn(aResponse()
+                        .withStatus(201)
+                        .withHeader("Content-Type", "application/json")
+                        .withBodyFile("application/pna-create-application-without-application-components-response.json")));
 
         // when
         Application createdApplication = applicationService.createApplication(application);
