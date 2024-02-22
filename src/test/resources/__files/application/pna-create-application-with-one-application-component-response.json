@@ -1,0 +1,14 @@
+{
+  "applicationUUID": "66ae631b-2dff-4334-b0fb-176e054ccbaa",
+  "name": "app-nginx",
+  "applicationComponents": [
+    {
+      "applicationComponentUUID": "66ae631b-2dff-4334-b0fb-176e054ccbcc",
+      "name": "component-nginx",
+      "image": "nginx",
+      "port": 80,
+      "protocol": "HTTP",
+      "applicationComponentType": "PUBLIC"
+    }
+  ]
+}

@@ -1,19 +1,21 @@
 package dev.pulceo.prm.model.application;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import dev.pulceo.prm.dto.application.ApplicationComponentDTO;
 import dev.pulceo.prm.dto.application.ApplicationDTO;
 import dev.pulceo.prm.dto.application.CreateNewApplicationDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+
+import static java.util.stream.Collectors.toList;
 
 @Entity
 @Getter
@@ -26,15 +28,16 @@ import java.util.UUID;
                 @NamedAttributeNode("applicationComponents")
         }
 )
-@ToString(exclude = "applicationComponents")
 public class Application extends BaseEntity implements HasEndpoint {
 
     // uuid of application in super class
     private UUID remoteApplicationUUID; // the id on the local edge device
     private UUID nodeUUID; // the nodeUUID of the edge device (global id), not on the local edge device
     private String name;
+    @JsonManagedReference
+    @Builder.Default
     @OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.MERGE, CascadeType.REMOVE }, mappedBy = "application")
-    private List<ApplicationComponent> applicationComponents;
+    private List<ApplicationComponent> applicationComponents = new ArrayList<>();
 
     public static Application fromCreateNewApplicationDTO(CreateNewApplicationDTO createNewApplicationDTO) {
         return Application.builder()
@@ -45,19 +48,18 @@ public class Application extends BaseEntity implements HasEndpoint {
                 .build();
     }
 
-    public static Application fromApplicationDTO(UUID nodeUUID, ApplicationDTO applicationDTO) {
+    public static Application fromApplicationDTO(UUID nodeUUID, String nodeHost, ApplicationDTO applicationDTO) {
         return Application.builder()
                 .nodeUUID(nodeUUID)
                 .remoteApplicationUUID(UUID.fromString(applicationDTO.getApplicationUUID()))
                 .name(applicationDTO.getName())
-                .applicationComponents(applicationDTO.getApplicationComponents().stream().map(ApplicationComponent::fromApplicationComponentDTO).toList())
+                .applicationComponents(applicationDTO.getApplicationComponents().stream().map(applicationComponentDTO -> ApplicationComponent.fromApplicationComponentDTO(nodeUUID, nodeHost, applicationComponentDTO)).toList())
                 .build();
     }
 
     // TODO: fill with proper extension
     @Override
     public URI getEndpoint() {
-
         return URI.create("https://test.com");
     }
 
@@ -82,5 +84,9 @@ public class Application extends BaseEntity implements HasEndpoint {
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (applicationComponents != null ? applicationComponents.hashCode() : 0);
         return result;
+    }
+
+    public void addApplicationComponent(ApplicationComponent applicationComponent) {
+        this.applicationComponents.add(applicationComponent);
     }
 }
