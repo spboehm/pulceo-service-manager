@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: pulceo-service-manager
-          image: ghcr.io/spboehm/pulceo-service-manager:implement-service-manager
+          image: ghcr.io/spboehm/pulceo-service-manager:main
           imagePullPolicy: Always
           env:
             - name: PRM_HOST
