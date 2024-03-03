@@ -20,7 +20,7 @@ import java.util.UUID;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@SpringBootTest(properties = { "webclient.scheme=http"})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ApplicationServiceIntegrationTests {
 

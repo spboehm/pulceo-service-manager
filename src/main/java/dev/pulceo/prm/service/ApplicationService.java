@@ -27,6 +27,9 @@ public class ApplicationService {
     @Value("${prm.endpoint}")
     private String prmEndpoint;
 
+    @Value("${webclient.scheme}")
+    private String webClientScheme;
+
     @Autowired
     public ApplicationService(ApplicationRepository applicationRepository, ApplicationComponentRepository applicationComponentRepository) {
         this.applicationRepository = applicationRepository;
@@ -49,7 +52,7 @@ public class ApplicationService {
                 })
                 .block();
 
-        WebClient webClientToPNA = WebClient.create("http://" + srcNode.getHostname() + ":" + "7676");
+        WebClient webClientToPNA = WebClient.create(this.webClientScheme + "://" + srcNode.getHostname() + ":" + "7676");
         ApplicationDTO applicationDTO = webClientToPNA.post()
                 .uri("/api/v1/applications")
                 .header("Authorization", "Basic " + getPnaTokenByNodeUUID(srcNode.getUuid()))
@@ -145,7 +148,7 @@ public class ApplicationService {
                 })
                 .block();
 
-        WebClient webClientToPNA = WebClient.create("http://" + srcNode.getHostname() + ":" + "7676");
+        WebClient webClientToPNA = WebClient.create(this.webClientScheme + "://" + srcNode.getHostname() + ":" + "7676");
         webClientToPNA.delete()
                 .uri("/api/v1/applications/" + application.getRemoteApplicationUUID())
                 .header("Authorization", "Basic " + getPnaTokenByNodeUUID(srcNode.getUuid()))
