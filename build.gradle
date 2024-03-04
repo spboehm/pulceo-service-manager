@@ -45,6 +45,17 @@ dependencies {
 	testImplementation 'org.junit.jupiter:junit-jupiter-params:5.6.0'
 }
 
+tasks.register("bootRun-psm-dev") {
+	group = "application"
+	description = "Runs psm with the dev profile"
+	doFirst {
+		tasks.bootRun.configure {
+			systemProperty("spring.profiles.active", "dev")
+		}
+	}
+	finalizedBy("bootRun")
+}
+
 test {
 	useJUnitPlatform()
 }
