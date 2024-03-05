@@ -28,6 +28,15 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApplicationDTO> readApplicationById(@PathVariable String id) {
+        Optional<Application> application = this.resolveApplication(id);
+        if (application.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        }
+        return ResponseEntity.status(200).body(ApplicationDTO.fromApplication(application.get()));
+    }
+
     @GetMapping("")
     public ResponseEntity<List<ApplicationDTO>> readAllApplications() {
         List<Application> applications = applicationService.readAllApplications();
@@ -52,6 +61,22 @@ public class ApplicationController {
             throw new ApplicationServiceException("Application with UUID %s does not exist!".formatted(uuid));
         }
         this.applicationService.deleteApplication(UUID.fromString(uuid));
+    }
+
+    private Optional<Application> resolveApplication(String id) {
+        Optional<Application> application;
+        // TODO: add resolve to name here, heck if UUID
+        if (checkIfUUID(id)) {
+            application = this.applicationService.readApplicationByUUID(UUID.fromString(id));
+        } else {
+            application = this.applicationService.readApplicationByName(id);
+        }
+        return application;
+    }
+
+    private static boolean checkIfUUID(String uuid)  {
+        String uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+        return uuid.matches(uuidRegex);
     }
 
     // TODO: add exception handler
