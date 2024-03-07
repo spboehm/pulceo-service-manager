@@ -53,14 +53,14 @@ public class ApplicationController {
         return ResponseEntity.status(201).body(ApplicationDTO.fromApplication(application));
     }
 
-    @DeleteMapping("/{uuid}")
+    @DeleteMapping("/{id}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void deleteApplication(@PathVariable String uuid) throws ApplicationServiceException {
-        Optional<Application> application = applicationService.readApplicationByUUID(UUID.fromString(uuid));
+    public void deleteApplication(@PathVariable String id) throws ApplicationServiceException {
+        Optional<Application> application = this.resolveApplication(id);
         if (application.isEmpty()) {
-            throw new ApplicationServiceException("Application with UUID %s does not exist!".formatted(uuid));
+            throw new ApplicationServiceException("Application %s does not exist!".formatted(id));
         }
-        this.applicationService.deleteApplication(UUID.fromString(uuid));
+        this.applicationService.deleteApplication(application.get().getUuid());
     }
 
     private Optional<Application> resolveApplication(String id) {

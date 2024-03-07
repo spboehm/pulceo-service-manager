@@ -2,6 +2,7 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.dto.application.ApplicationDTO;
 import dev.pulceo.prm.dto.node.NodeDTO;
+import dev.pulceo.prm.dto.pna.ApplicationOnPNADTO;
 import dev.pulceo.prm.exception.ApplicationServiceException;
 import dev.pulceo.prm.model.application.Application;
 import dev.pulceo.prm.model.application.ApplicationComponent;
@@ -66,31 +67,32 @@ public class ApplicationService {
         // TODO: Webclient to pna, try to commit
         WebClient webClientToPRM = WebClient.create(this.prmEndpoint);
         NodeDTO srcNode = webClientToPRM.get()
-                .uri("/api/v1/nodes/" + application.getNodeUUID())
+                .uri("/api/v1/nodes/" + application.getNodeId())
                 .retrieve()
                 .bodyToMono(NodeDTO.class)
                 .onErrorResume(error -> {
-                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeUUID())));
+                    this.applicationRepository.delete(preliminaryApplication.get());
+                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeId())));
                 })
                 .block();
 
         WebClient webClientToPNA = WebClient.create(this.webClientScheme + "://" + srcNode.getHostname() + ":" + "7676");
-        ApplicationDTO applicationDTO = webClientToPNA.post()
+        ApplicationOnPNADTO applicationDTO = webClientToPNA.post()
                 .uri("/api/v1/applications")
                 .header("Authorization", "Basic " + getPnaTokenByNodeUUID(srcNode.getUuid()))
                 .bodyValue(application)
                 .retrieve()
-                .bodyToMono(ApplicationDTO.class)
+                .bodyToMono(ApplicationOnPNADTO.class)
                 .onErrorResume(error -> {
-                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeUUID())));
+                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeId())));
                 })
                 .block();
 
         // if return is positive, persist application
-        Application receivedApplication = Application.fromApplicationDTO(srcNode.getUuid(), srcNode.getHostname(), applicationDTO);
+        Application receivedApplication = Application.fromApplicationDTO(srcNode.getUuid(), srcNode.getHostname(), application.getNodeId(), applicationDTO);
 
         preliminaryApplication.get().setRemoteApplicationUUID(receivedApplication.getRemoteApplicationUUID());
-        preliminaryApplication.get().setNodeUUID(receivedApplication.getNodeUUID());
+        preliminaryApplication.get().setNodeId(receivedApplication.getNodeId());
         preliminaryApplication.get().setName(receivedApplication.getName());
 
         Application persistedApplication = this.applicationRepository.save(preliminaryApplication.get());
@@ -168,11 +170,11 @@ public class ApplicationService {
         // TODO: Webclient to pna, try to commit
         WebClient webClientToPRM = WebClient.create(this.prmEndpoint);
         NodeDTO srcNode = webClientToPRM.get()
-                .uri("/api/v1/nodes/" + application.getNodeUUID())
+                .uri("/api/v1/nodes/" + application.getNodeId())
                 .retrieve()
                 .bodyToMono(NodeDTO.class)
                 .onErrorResume(error -> {
-                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeUUID())));
+                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeId())));
                 })
                 .block();
 

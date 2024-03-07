@@ -1,8 +1,8 @@
 package dev.pulceo.prm.model.application;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import dev.pulceo.prm.dto.application.ApplicationDTO;
 import dev.pulceo.prm.dto.application.CreateNewApplicationDTO;
+import dev.pulceo.prm.dto.pna.ApplicationOnPNADTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,7 +31,7 @@ public class Application extends BaseEntity implements HasEndpoint {
 
     // uuid of application in super class
     private UUID remoteApplicationUUID; // the id on the local edge device
-    private UUID nodeUUID; // the nodeUUID of the edge device (global id), not on the local edge device
+    private String nodeId; // the nodeUUID of the edge device (global id), not on the local edge device
     private String name;
     @JsonManagedReference
     @Builder.Default
@@ -41,15 +41,15 @@ public class Application extends BaseEntity implements HasEndpoint {
     public static Application fromCreateNewApplicationDTO(CreateNewApplicationDTO createNewApplicationDTO) {
         return Application.builder()
                 .remoteApplicationUUID(UUID.fromString("00000000-0000-0000-0000-000000000000"))
-                .nodeUUID(createNewApplicationDTO.getNodeUUID())
+                .nodeId(createNewApplicationDTO.getNodeId())
                 .name(createNewApplicationDTO.getName())
                 .applicationComponents(createNewApplicationDTO.getApplicationComponents().stream().map(ApplicationComponent::fromCreateNewApplicationComponentDTO).toList())
                 .build();
     }
 
-    public static Application fromApplicationDTO(UUID nodeUUID, String nodeHost, ApplicationDTO applicationDTO) {
+    public static Application fromApplicationDTO(UUID nodeUUID, String nodeHost, String nodeId, ApplicationOnPNADTO applicationDTO) {
         return Application.builder()
-                .nodeUUID(nodeUUID)
+                .nodeId(nodeId)
                 .remoteApplicationUUID(UUID.fromString(applicationDTO.getApplicationUUID()))
                 .name(applicationDTO.getName())
                 .applicationComponents(applicationDTO.getApplicationComponents().stream().map(applicationComponentDTO -> ApplicationComponent.fromApplicationComponentDTO(nodeUUID, nodeHost, applicationComponentDTO)).toList())

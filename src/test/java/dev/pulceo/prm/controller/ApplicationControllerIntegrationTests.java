@@ -1,6 +1,5 @@
 package dev.pulceo.prm.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import dev.pulceo.prm.dto.application.CreateNewApplicationDTO;
@@ -63,7 +62,7 @@ public class ApplicationControllerIntegrationTests {
         // given
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         CreateNewApplicationDTO createNewApplicationDTO = CreateNewApplicationDTO.builder()
-                .nodeUUID(nodeUUID)
+                .nodeId(String.valueOf(nodeUUID))
                 .name("app-nginx")
                 .applicationComponents(new ArrayList<>())
                 .build();
@@ -96,7 +95,7 @@ public class ApplicationControllerIntegrationTests {
                         .contentType("application/json")
                         .content(createNewApplicationDTOJson))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nodeUUID").value(nodeUUID.toString()))
+                .andExpect(jsonPath("$.nodeId").value(nodeUUID.toString()))
                 .andExpect(jsonPath("$.name").value("app-nginx"))
                 .andExpect(jsonPath("$.applicationComponents").isEmpty());
 
@@ -107,7 +106,7 @@ public class ApplicationControllerIntegrationTests {
         // given
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         CreateNewApplicationDTO createNewApplicationDTO = CreateNewApplicationDTO.builder()
-                .nodeUUID(nodeUUID)
+                .nodeId(String.valueOf(nodeUUID))
                 .name("app-nginx")
                 .applicationComponents(new ArrayList<>())
                 .build();
@@ -145,7 +144,7 @@ public class ApplicationControllerIntegrationTests {
                         .contentType("application/json")
                         .content(createNewApplicationDTOJson))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nodeUUID").value(nodeUUID.toString()))
+                .andExpect(jsonPath("$.nodeId").value(nodeUUID.toString()))
                 .andExpect(jsonPath("$.name").value("app-nginx"))
                 .andExpect(jsonPath("$.applicationComponents").isEmpty())
                 .andReturn();

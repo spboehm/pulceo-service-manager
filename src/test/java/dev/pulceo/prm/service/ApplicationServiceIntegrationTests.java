@@ -67,7 +67,7 @@ public class ApplicationServiceIntegrationTests {
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         Application application = Application.builder()
                 .remoteApplicationUUID(UUID.fromString("66ae631b-2dff-4334-b0fb-176e054ccbaa"))
-                .nodeUUID(nodeUUID)
+                .nodeId(String.valueOf(nodeUUID))
                 .name("app-nginx")
                 .applicationComponents(new ArrayList<>())
                 .build();
@@ -107,7 +107,7 @@ public class ApplicationServiceIntegrationTests {
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         Application application = Application.builder()
                 .remoteApplicationUUID(UUID.fromString("66ae631b-2dff-4334-b0fb-176e054ccbaa"))
-                .nodeUUID(nodeUUID)
+                .nodeId(String.valueOf(nodeUUID))
                 .name("app-nginx")
                 .build();
 
