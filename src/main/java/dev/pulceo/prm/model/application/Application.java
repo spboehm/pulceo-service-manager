@@ -1,13 +1,13 @@
 package dev.pulceo.prm.model.application;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import dev.pulceo.prm.dto.application.ApplicationComponentDTO;
 import dev.pulceo.prm.dto.application.ApplicationDTO;
 import dev.pulceo.prm.dto.application.CreateNewApplicationDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.proxy.HibernateProxy;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -15,10 +15,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import static java.util.stream.Collectors.toList;
-
 @Entity
 @Getter
+@Setter
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -68,30 +67,23 @@ public class Application extends BaseEntity implements HasEndpoint {
         return URI.create("");
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Application that = (Application) o;
-
-        if (!Objects.equals(remoteApplicationUUID, that.remoteApplicationUUID))
-            return false;
-        if (!Objects.equals(nodeUUID, that.nodeUUID)) return false;
-        if (!Objects.equals(name, that.name)) return false;
-        return Objects.equals(applicationComponents, that.applicationComponents);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = remoteApplicationUUID != null ? remoteApplicationUUID.hashCode() : 0;
-        result = 31 * result + (nodeUUID != null ? nodeUUID.hashCode() : 0);
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (applicationComponents != null ? applicationComponents.hashCode() : 0);
-        return result;
-    }
-
     public void addApplicationComponent(ApplicationComponent applicationComponent) {
         this.applicationComponents.add(applicationComponent);
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        Application that = (Application) o;
+        return getId() != null && Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
 }

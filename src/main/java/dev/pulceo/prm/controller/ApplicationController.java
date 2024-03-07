@@ -1,7 +1,6 @@
 package dev.pulceo.prm.controller;
 
 import dev.pulceo.prm.dto.application.ApplicationDTO;
-import dev.pulceo.prm.dto.application.CreateNewApplicationComponentDTO;
 import dev.pulceo.prm.dto.application.CreateNewApplicationDTO;
 import dev.pulceo.prm.exception.ApplicationServiceException;
 import dev.pulceo.prm.model.application.Application;
@@ -49,7 +48,8 @@ public class ApplicationController {
 
     @PostMapping
     public ResponseEntity<ApplicationDTO> createNewApplication(@Valid @RequestBody CreateNewApplicationDTO createNewApplicationDTO) throws ApplicationServiceException {
-        Application application = applicationService.createApplication(Application.fromCreateNewApplicationDTO(createNewApplicationDTO));
+        Application application = applicationService.createPreliminaryApplication(Application.fromCreateNewApplicationDTO(createNewApplicationDTO));
+        this.applicationService.createApplicationAsync(application);
         return ResponseEntity.status(201).body(ApplicationDTO.fromApplication(application));
     }
 

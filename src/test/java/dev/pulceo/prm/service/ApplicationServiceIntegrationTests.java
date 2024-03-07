@@ -7,15 +7,18 @@ import dev.pulceo.prm.model.application.Application;
 import dev.pulceo.prm.model.application.ApplicationComponent;
 import dev.pulceo.prm.model.application.ApplicationComponentProtocol;
 import dev.pulceo.prm.model.application.ApplicationComponentType;
+import dev.pulceo.prm.repository.ApplicationComponentRepository;
 import dev.pulceo.prm.repository.ApplicationRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.wiremock.WireMockSpring;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,6 +32,9 @@ public class ApplicationServiceIntegrationTests {
 
     @Autowired
     private ApplicationRepository applicationRepository;
+
+    @Autowired
+    private ApplicationComponentRepository applicationComponentRepository;
 
     public static WireMockServer wireMockServerForPRM = new WireMockServer(WireMockSpring.options().bindAddress("127.0.0.1").port(7878));
     public static WireMockServer wireMockServerForPNA = new WireMockServer(WireMockSpring.options().bindAddress("127.0.0.1").port(7676));
@@ -45,6 +51,7 @@ public class ApplicationServiceIntegrationTests {
     @BeforeEach
     public void setup() {
         applicationRepository.deleteAll();
+        applicationComponentRepository.deleteAll();
     }
 
     @AfterAll
@@ -55,7 +62,7 @@ public class ApplicationServiceIntegrationTests {
     }
 
     @Test
-    public void testCreateApplication() throws ApplicationServiceException {
+    public void testCreateApplication() throws ApplicationServiceException, ExecutionException, InterruptedException {
         // given
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         Application application = Application.builder()
@@ -87,14 +94,15 @@ public class ApplicationServiceIntegrationTests {
                         .withBody("")));
 
         // when
-        Application createdApplication = applicationService.createApplication(application);
+        Application preliminaryApplication = this.applicationService.createPreliminaryApplication(application);
+        CompletableFuture<Application> createdApplication = applicationService.createApplicationAsync(preliminaryApplication);
 
         // then
-        assertEquals(application, createdApplication);
+        assertEquals(application, createdApplication.get());
     }
 
     @Test
-    public void testCreateApplicationWithOneComponent() throws ApplicationServiceException {
+    public void testCreateApplicationWithOneComponent() throws ApplicationServiceException, ExecutionException, InterruptedException {
         // given
         UUID nodeUUID = UUID.fromString("0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3");
         Application application = Application.builder()
@@ -142,9 +150,10 @@ public class ApplicationServiceIntegrationTests {
                         .withBody("")));
 
         // when
-        Application createdApplication = applicationService.createApplication(application);
+        Application preliminaryApplication = this.applicationService.createPreliminaryApplication(application);
+        CompletableFuture<Application> createdApplication = applicationService.createApplicationAsync(preliminaryApplication);
 
         // then
-        assertEquals(application, createdApplication);
+        assertEquals(application, createdApplication.get());
     }
 }

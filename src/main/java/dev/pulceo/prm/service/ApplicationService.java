@@ -5,11 +5,12 @@ import dev.pulceo.prm.dto.node.NodeDTO;
 import dev.pulceo.prm.exception.ApplicationServiceException;
 import dev.pulceo.prm.model.application.Application;
 import dev.pulceo.prm.model.application.ApplicationComponent;
+import dev.pulceo.prm.model.application.ApplicationComponentType;
 import dev.pulceo.prm.repository.ApplicationComponentRepository;
 import dev.pulceo.prm.repository.ApplicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.convert.Jsr310Converters;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ApplicationService {
@@ -36,9 +38,29 @@ public class ApplicationService {
         this.applicationComponentRepository = applicationComponentRepository;
     }
 
-    public Application createApplication(Application application) throws ApplicationServiceException {
-        if (this.isApplicationAlreadyExisting(application.getName())) {
-            throw new ApplicationServiceException(String.format("Application %s already exists", application.getName()));
+    public Application createPreliminaryApplication(Application application) throws ApplicationServiceException {
+        Optional<Application> newApplication = this.applicationRepository.findByName(application.getName());
+        if (newApplication.isPresent()) {
+            throw new ApplicationServiceException("Application with name " + application.getName() + " already exists!");
+        }
+
+        for (ApplicationComponent applicationComponent : application.getApplicationComponents()) {
+            if (applicationComponent.getApplicationComponentType() == ApplicationComponentType.PUBLIC) {
+                Optional<ApplicationComponent> applicationComponentOptional = this.applicationComponentRepository.findByPortAndApplicationComponentType(applicationComponent.getPort(), ApplicationComponentType.PUBLIC);
+                if (applicationComponentOptional.isPresent()) {
+                    throw new ApplicationServiceException("Port " + applicationComponent.getPort() + " is already in use!");
+                }
+            }
+        }
+        return this.applicationRepository.save(application);
+    }
+
+
+    @Async
+    public CompletableFuture<Application> createApplicationAsync(Application application) throws ApplicationServiceException {
+        Optional<Application> preliminaryApplication = this.applicationRepository.findByUuid(application.getUuid());
+        if (preliminaryApplication.isEmpty()) {
+            throw new ApplicationServiceException("Application %s does not exist. Please create at first lazily");
         }
 
         // TODO: Webclient to pna, try to commit
@@ -66,7 +88,12 @@ public class ApplicationService {
 
         // if return is positive, persist application
         Application receivedApplication = Application.fromApplicationDTO(srcNode.getUuid(), srcNode.getHostname(), applicationDTO);
-        Application persistedApplication = this.applicationRepository.save(receivedApplication);
+
+        preliminaryApplication.get().setRemoteApplicationUUID(receivedApplication.getRemoteApplicationUUID());
+        preliminaryApplication.get().setNodeUUID(receivedApplication.getNodeUUID());
+        preliminaryApplication.get().setName(receivedApplication.getName());
+
+        Application persistedApplication = this.applicationRepository.save(preliminaryApplication.get());
         // only executed if element in list is present
         for (ApplicationComponent applicationComponent : receivedApplication.getApplicationComponents()) {
             try {
@@ -75,7 +102,7 @@ public class ApplicationService {
                 throw new ApplicationServiceException("Could not create application!", e);
             }
         }
-        return persistedApplication;
+        return CompletableFuture.completedFuture(persistedApplication);
     }
 
     private String getPnaTokenByNodeUUID(UUID nodeUUID) {
@@ -128,6 +155,7 @@ public class ApplicationService {
         return this.applicationRepository.findByUuid(uuid);
     }
 
+    @Async
     public void deleteApplication(UUID uuid) throws ApplicationServiceException {
         Optional<Application> optionalApplication = this.applicationRepository.findByUuid(uuid);
 
