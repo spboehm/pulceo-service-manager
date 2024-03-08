@@ -1,3 +1,5 @@
+<img src="docs/assets/pulceo-logo-color.png" alt="pulceo-logo" width="25%" height="auto"/>
+
 # pulceo-service-manager
 
 ## General Prerequisites
@@ -35,6 +37,31 @@ kubectl --kubeconfig=/home/$USER/.kube/config create secret generic psm-credenti
 ```
 ```bash
 kubectl apply -f psm-deployment.yaml
+```
+
+- Check if everything is running with: `kubectl get deployment`
+```
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+pulceo-service-manager   1/1     1            1           3m9s
+```
+
+- Check the exposed services with: `kubectl get svc`
+```
+NAME                     TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+kubernetes               ClusterIP   10.43.0.1     <none>        443/TCP    59m
+pulceo-service-manager   ClusterIP   10.43.44.56   <none>        7979/TCP   3m38s
+```
+
+pulceo-service-manager is now running and ready to accept workloads under `http://EXTERNAL-IP`
+
+```bash
+curl -I http://localhost:80/psm/health
+```
+```
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: text/plain;charset=UTF-8
+Date: Fri, 08 Mar 2024 01:41:00 GMT
 ```
 
 ## Undeploy
