@@ -36,3 +36,9 @@ kubectl --kubeconfig=/home/$USER/.kube/config create secret generic psm-credenti
 ```bash
 kubectl apply -f psm-deployment.yaml
 ```
+
+## Undeploy
+
+```bash
+kubectl delete -f psm-deployment.yaml
+```

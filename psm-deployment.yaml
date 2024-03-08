@@ -58,6 +58,9 @@ spec:
         - name: pulceo-service-manager
           image: ghcr.io/spboehm/pulceo-service-manager:main
           imagePullPolicy: Always
+          volumeMounts:
+            - name: psm-pv-db
+              mountPath: /db
           env:
             - name: PRM_HOST
               valueFrom:
@@ -82,3 +85,21 @@ spec:
           ports:
             - containerPort: 7979
               name: web
+      volumes:
+        - name: psm-pv-db
+          persistentVolumeClaim:
+            claimName: psm-pv-db
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: psm-pv-db
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
