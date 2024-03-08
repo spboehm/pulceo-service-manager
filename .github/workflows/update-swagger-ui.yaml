@@ -1,0 +1,52 @@
+name: Update Swagger UI
+
+on:
+  workflow_run:
+    workflows: ["Build pulceo-service-manager"]
+    branches: [main]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+      - name: Run with Gradle
+        run: |
+          nohup ./gradlew bootRun > /dev/null 2>&1 &
+          echo $! > psm.pid
+          curl --retry-connrefused --connect-timeout 10 --max-time 10 --retry 10 --retry-delay 5 --retry-max-time 40 'http://localhost:7979/v3/api-docs' > docs/swagger/psm-api.json
+          kill $(cat psm.pid)
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs/swagger'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

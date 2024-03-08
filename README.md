@@ -2,6 +2,8 @@
 
 # pulceo-service-manager
 
+[OpenAPI definition for pulceo-service-manager](https://spboehm.github.io/pulceo-service-manager/)
+
 ## General Prerequisites
 
 - Make sure that the following ports are available on the local system:
