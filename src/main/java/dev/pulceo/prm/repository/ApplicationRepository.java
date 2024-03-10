@@ -16,5 +16,6 @@ public interface ApplicationRepository extends CrudRepository<Application, Long>
     @EntityGraph(value="graph.Application.applicationComponents")
     Iterable<Application> findAll();
 
+    @EntityGraph(value="graph.Application.applicationComponents")
     Optional<Application> findByUuid(UUID uuid);
 }
