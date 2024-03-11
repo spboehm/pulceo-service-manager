@@ -12,6 +12,9 @@ public interface ApplicationRepository extends CrudRepository<Application, Long>
     @EntityGraph(value="graph.Application.applicationComponents")
     Optional<Application> findByName(String name);
 
+    @EntityGraph(value="graph.Application.applicationComponents")
+    Optional<Application> findByNameAndNodeId(String name, String nodeId);
+
     @Override
     @EntityGraph(value="graph.Application.applicationComponents")
     Iterable<Application> findAll();
