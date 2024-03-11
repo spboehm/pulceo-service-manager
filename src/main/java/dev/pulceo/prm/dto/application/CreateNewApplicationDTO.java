@@ -14,10 +14,8 @@ import java.util.UUID;
 @SuperBuilder
 public class CreateNewApplicationDTO {
 
-    @Builder.Default
-    private String nodeId = "00000000-0000-0000-0000-000000000000";
-    @Builder.Default
-    private String name = "";
+    private String nodeId;
+    private String name;
     @Builder.Default
     private List<CreateNewApplicationComponentDTO> applicationComponents = new ArrayList<>();
 

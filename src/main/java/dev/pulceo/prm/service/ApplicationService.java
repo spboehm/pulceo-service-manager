@@ -44,6 +44,17 @@ public class ApplicationService {
     }
 
     public Application createPreliminaryApplication(Application application) throws ApplicationServiceException {
+        // TODO: check if target node exists
+        WebClient webClientToPRM = WebClient.create(this.prmEndpoint);
+        NodeDTO srcNode = webClientToPRM.get()
+                .uri("/api/v1/nodes/" + application.getNodeId())
+                .retrieve()
+                .bodyToMono(NodeDTO.class)
+                .onErrorResume(error -> {
+                    throw new RuntimeException(new ApplicationServiceException("Can not create application: Node with id %s does not exist!".formatted(application.getNodeId())));
+                })
+                .block();
+        application.setName(srcNode.getNode().getName() + "-" + application.getName());
         Optional<Application> newApplication = this.applicationRepository.findByName(application.getName());
         if (newApplication.isPresent()) {
             throw new ApplicationServiceException("Application with name " + application.getName() + " already exists!");
