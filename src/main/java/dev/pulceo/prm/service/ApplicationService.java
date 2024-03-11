@@ -1,12 +1,13 @@
 package dev.pulceo.prm.service;
 
-import dev.pulceo.prm.dto.application.ApplicationDTO;
 import dev.pulceo.prm.dto.node.NodeDTO;
 import dev.pulceo.prm.dto.pna.ApplicationOnPNADTO;
 import dev.pulceo.prm.exception.ApplicationServiceException;
 import dev.pulceo.prm.model.application.Application;
 import dev.pulceo.prm.model.application.ApplicationComponent;
 import dev.pulceo.prm.model.application.ApplicationComponentType;
+import dev.pulceo.prm.model.event.EventType;
+import dev.pulceo.prm.model.event.PulceoEvent;
 import dev.pulceo.prm.repository.ApplicationComponentRepository;
 import dev.pulceo.prm.repository.ApplicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +34,13 @@ public class ApplicationService {
     @Value("${webclient.scheme}")
     private String webClientScheme;
 
+    private final EventHandler eventHandler;
+
     @Autowired
-    public ApplicationService(ApplicationRepository applicationRepository, ApplicationComponentRepository applicationComponentRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository, ApplicationComponentRepository applicationComponentRepository, EventHandler eventHandler) {
         this.applicationRepository = applicationRepository;
         this.applicationComponentRepository = applicationComponentRepository;
+        this.eventHandler = eventHandler;
     }
 
     public Application createPreliminaryApplication(Application application) throws ApplicationServiceException {
@@ -58,7 +62,7 @@ public class ApplicationService {
 
 
     @Async
-    public CompletableFuture<Application> createApplicationAsync(Application application) throws ApplicationServiceException {
+    public CompletableFuture<Application> createApplicationAsync(Application application) throws ApplicationServiceException, InterruptedException {
         Optional<Application> preliminaryApplication = this.applicationRepository.findByUuid(application.getUuid());
         if (preliminaryApplication.isEmpty()) {
             throw new ApplicationServiceException("Application %s does not exist. Please create at first lazily");
@@ -104,6 +108,19 @@ public class ApplicationService {
                 throw new ApplicationServiceException("Could not create application!", e);
             }
         }
+
+        Optional<Application> fullyPersistedApplication = this.readApplicationByUUID(persistedApplication.getUuid());
+
+        if (fullyPersistedApplication.isEmpty()) {
+            throw new ApplicationServiceException("Could not retrieve application!");
+        }
+
+        PulceoEvent pulceoEvent = PulceoEvent.builder()
+                .eventType(EventType.APPLICATION_CREATED)
+                .payload(fullyPersistedApplication.get().toString())
+                .build();
+        this.eventHandler.handleEvent(pulceoEvent);
+
         return CompletableFuture.completedFuture(persistedApplication);
     }
 
@@ -120,7 +137,7 @@ public class ApplicationService {
         return pnaToken;
     }
 
-    public ApplicationComponent createApplicationComponent(Application application, ApplicationComponent applicationComponent) throws ApplicationServiceException {
+    public ApplicationComponent createApplicationComponent(Application application, ApplicationComponent applicationComponent) throws ApplicationServiceException, InterruptedException {
         Optional<Application> persistedApplication = this.applicationRepository.findByName(application.getName());
 
         if (persistedApplication.isEmpty()) {
@@ -131,6 +148,13 @@ public class ApplicationService {
             throw new ApplicationServiceException(String.format("ApplicationComponent %s already exists", applicationComponent.getName()));
         }
         applicationComponent.setApplication(persistedApplication.get());
+
+        PulceoEvent pulceoEvent = PulceoEvent.builder()
+                .eventType(EventType.APPLICATION_COMPONENT_CREATED)
+                .payload(applicationComponent.toString())
+                .build();
+        this.eventHandler.handleEvent(pulceoEvent);
+
         return this.applicationComponentRepository.save(applicationComponent);
     }
 
@@ -158,7 +182,7 @@ public class ApplicationService {
     }
 
     @Async
-    public void deleteApplication(UUID uuid) throws ApplicationServiceException {
+    public void deleteApplication(UUID uuid) throws ApplicationServiceException, InterruptedException {
         Optional<Application> optionalApplication = this.applicationRepository.findByUuid(uuid);
 
         if (optionalApplication.isEmpty()) {
@@ -188,6 +212,12 @@ public class ApplicationService {
                 })
                 .bodyToMono(Void.class)
                 .block();
+
+        PulceoEvent pulceoEvent = PulceoEvent.builder()
+                .eventType(EventType.APPLICATION_DELETED)
+                .payload(application.toString())
+                .build();
+        this.eventHandler.handleEvent(pulceoEvent);
 
         this.applicationRepository.delete(application);
     }

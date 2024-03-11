@@ -86,4 +86,14 @@ public class Application extends BaseEntity implements HasEndpoint {
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "Application{" +
+                "remoteApplicationUUID=" + remoteApplicationUUID +
+                ", nodeId='" + nodeId + '\'' +
+                ", name='" + name + '\'' +
+                ", applicationComponents=" + applicationComponents +
+                '}';
+    }
 }
