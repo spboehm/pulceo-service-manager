@@ -7,6 +7,7 @@ import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +33,7 @@ public class EventHandler {
         this.eventServiceChannel = eventServiceChannel;
     }
 
+    @Async
     public void handleEvent(PulceoEvent event) throws InterruptedException {
         this.eventQueue.put(event);
     }
