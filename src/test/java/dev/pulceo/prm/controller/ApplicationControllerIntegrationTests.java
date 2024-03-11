@@ -96,7 +96,7 @@ public class ApplicationControllerIntegrationTests {
                         .content(createNewApplicationDTOJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.nodeId").value(nodeUUID.toString()))
-                .andExpect(jsonPath("$.name").value("app-nginx"))
+                .andExpect(jsonPath("$.name").value("127.0.0.1-app-nginx"))
                 .andExpect(jsonPath("$.applicationComponents").isEmpty());
 
     }
@@ -145,7 +145,7 @@ public class ApplicationControllerIntegrationTests {
                         .content(createNewApplicationDTOJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.nodeId").value(nodeUUID.toString()))
-                .andExpect(jsonPath("$.name").value("app-nginx"))
+                .andExpect(jsonPath("$.name").value("127.0.0.1-app-nginx"))
                 .andExpect(jsonPath("$.applicationComponents").isEmpty())
                 .andReturn();
         String applicationUUID = objectMapper.readTree(mvcResult.getResponse().getContentAsString()).get("applicationUUID").asText();
