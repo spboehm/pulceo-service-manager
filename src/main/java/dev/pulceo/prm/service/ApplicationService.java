@@ -55,7 +55,7 @@ public class ApplicationService {
                 })
                 .block();
         application.setName(srcNode.getNode().getName() + "-" + application.getName());
-        Optional<Application> newApplication = this.applicationRepository.findByName(application.getName());
+        Optional<Application> newApplication = this.applicationRepository.findByName(srcNode.getNode().getName() + "-" + application.getName());
         if (newApplication.isPresent()) {
             throw new ApplicationServiceException("Application with name " + application.getName() + " already exists!");
         }
