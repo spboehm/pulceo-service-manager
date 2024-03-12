@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ThreadPoolTaskExecutorConfig {
 
     @Bean
-    public ThreadPoolTaskExecutor threadPoolTaskExecutor() {
+    public ThreadPoolTaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);
         return executor;
