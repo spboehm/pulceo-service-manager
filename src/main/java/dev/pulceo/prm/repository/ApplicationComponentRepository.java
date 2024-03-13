@@ -7,6 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 
 import javax.sql.rowset.CachedRowSet;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface ApplicationComponentRepository extends CrudRepository<ApplicationComponent, Long> {
     Optional<ApplicationComponent> findByName(String name);
@@ -14,4 +15,6 @@ public interface ApplicationComponentRepository extends CrudRepository<Applicati
     Optional<ApplicationComponent> findByPort(int port);
 
     Optional<ApplicationComponent> findByPortAndApplicationComponentType(int port, ApplicationComponentType applicationComponentType);
+
+    Optional<ApplicationComponent> findByNodeUUIDAndPortAndApplicationComponentType(UUID nodeUUID, int port, ApplicationComponentType applicationComponentType);
 }

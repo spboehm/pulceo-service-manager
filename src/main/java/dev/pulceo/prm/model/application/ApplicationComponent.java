@@ -23,6 +23,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ApplicationComponent extends BaseEntity implements HasEndpoint {
 
+    @Builder.Default
+    private boolean isDeployed = false;
     private UUID remoteApplicationComponentUUID; // on device
     private UUID nodeUUID;
     private String nodeHost;

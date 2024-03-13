@@ -10,6 +10,8 @@ import dev.pulceo.prm.model.event.EventType;
 import dev.pulceo.prm.model.event.PulceoEvent;
 import dev.pulceo.prm.repository.ApplicationComponentRepository;
 import dev.pulceo.prm.repository.ApplicationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -24,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ApplicationService {
+
+    Logger logger = LoggerFactory.getLogger(ApplicationService.class);
 
     private final ApplicationRepository applicationRepository;
     private final ApplicationComponentRepository applicationComponentRepository;
@@ -55,15 +59,17 @@ public class ApplicationService {
                 })
                 .block();
         application.setName(srcNode.getNode().getName() + "-" + application.getName());
+        application.setNodeId(String.valueOf(srcNode.getUuid()));
         Optional<Application> newApplication = this.applicationRepository.findByName(srcNode.getNode().getName() + "-" + application.getName());
         if (newApplication.isPresent()) {
+            logger.error("Application with name {} already exists!", application.getName());
             throw new ApplicationServiceException("Application with name " + application.getName() + " already exists!");
         }
 
         for (ApplicationComponent applicationComponent : application.getApplicationComponents()) {
             if (applicationComponent.getApplicationComponentType() == ApplicationComponentType.PUBLIC) {
-                Optional<ApplicationComponent> applicationComponentOptional = this.applicationComponentRepository.findByPortAndApplicationComponentType(applicationComponent.getPort(), ApplicationComponentType.PUBLIC);
-                if (applicationComponentOptional.isPresent()) {
+                if (!isApplicationComponentDeployable(srcNode.getUuid(), applicationComponent.getPort(), ApplicationComponentType.PUBLIC, applicationComponent.isDeployed())) {
+                    logger.error("Application component with name {} already exists!", applicationComponent.getName());
                     throw new ApplicationServiceException("Port " + applicationComponent.getPort() + " is already in use!");
                 }
             }
@@ -74,8 +80,10 @@ public class ApplicationService {
 
     @Async
     public CompletableFuture<Application> createApplicationAsync(Application application) throws ApplicationServiceException, InterruptedException {
+        logger.info("Creating application asynchronously: " + application.toString());
         Optional<Application> preliminaryApplication = this.applicationRepository.findByUuid(application.getUuid());
         if (preliminaryApplication.isEmpty()) {
+            logger.error("Application {} does not exist. Please create at first lazily", application.getUuid());
             throw new ApplicationServiceException("Application %s does not exist. Please create at first lazily");
         }
 
@@ -104,6 +112,7 @@ public class ApplicationService {
                 .block();
 
         // if return is positive, persist application
+        logger.debug("Received application response from PNA: " + applicationDTO.toString());
         Application receivedApplication = Application.fromApplicationDTO(srcNode.getUuid(), srcNode.getHostname(), application.getNodeId(), applicationDTO);
 
         preliminaryApplication.get().setRemoteApplicationUUID(receivedApplication.getRemoteApplicationUUID());
@@ -116,6 +125,7 @@ public class ApplicationService {
             try {
                 this.createApplicationComponent(persistedApplication, applicationComponent);
             } catch (ApplicationServiceException e) {
+                logger.error("Could not create application component!", e);
                 throw new ApplicationServiceException("Could not create application!", e);
             }
         }
@@ -149,13 +159,17 @@ public class ApplicationService {
     }
 
     public ApplicationComponent createApplicationComponent(Application application, ApplicationComponent applicationComponent) throws ApplicationServiceException, InterruptedException {
+        logger.info("Creating application component for " + application.toString(), applicationComponent.toString());
         Optional<Application> persistedApplication = this.applicationRepository.findByName(application.getName());
+        applicationComponent.setName(application.getName() + "-" + applicationComponent.getName());
 
         if (persistedApplication.isEmpty()) {
+            logger.error("Application {} not found", application.getName());
             throw new ApplicationServiceException(String.format("Application %s not found", application.getName()));
         }
 
-        if (this.isApplicationComponentAlreadyExisting(applicationComponent.getName()) || isPortAlreadyInUse(applicationComponent.getPort())) {
+        if (!this.isApplicationComponentDeployable(UUID.fromString(application.getNodeId()), applicationComponent.getPort(), applicationComponent.getApplicationComponentType(), applicationComponent.isDeployed())) {
+            logger.error("ApplicationComponent {} already exists", applicationComponent.getName());
             throw new ApplicationServiceException(String.format("ApplicationComponent %s already exists", applicationComponent.getName()));
         }
         applicationComponent.setApplication(persistedApplication.get());
@@ -165,7 +179,7 @@ public class ApplicationService {
                 .payload(applicationComponent.toString())
                 .build();
         this.eventHandler.handleEvent(pulceoEvent);
-
+        applicationComponent.setDeployed(true);
         return this.applicationComponentRepository.save(applicationComponent);
     }
 
@@ -178,6 +192,18 @@ public class ApplicationService {
 
     private boolean isApplicationAlreadyExisting(String name) {
         return this.applicationRepository.findByName(name).isPresent();
+    }
+
+    private boolean isApplicationComponentDeployable(UUID nodeUUID, int port, ApplicationComponentType applicationComponentType, boolean isDeployed) {
+        Optional<ApplicationComponent> applicationComponent = this.applicationComponentRepository.findByNodeUUIDAndPortAndApplicationComponentType(nodeUUID, port, applicationComponentType);
+        if (applicationComponent.isPresent()) {
+            if (!applicationComponent.get().isDeployed()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isApplicationComponentAlreadyExisting(String name) {
