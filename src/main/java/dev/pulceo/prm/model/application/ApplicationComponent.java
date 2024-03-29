@@ -58,7 +58,7 @@ public class ApplicationComponent extends BaseEntity implements HasEndpoint {
                 .port(applicationComponentDTO.getPort())
                 .protocol(applicationComponentDTO.getProtocol())
                 .applicationComponentType(applicationComponentDTO.getApplicationComponentType())
-                .environmentVariables(applicationComponentDTO.getEnvironmentVariables())
+//                .environmentVariables(applicationComponentDTO.getEnvironmentVariables())
                 .build();
     }
 
