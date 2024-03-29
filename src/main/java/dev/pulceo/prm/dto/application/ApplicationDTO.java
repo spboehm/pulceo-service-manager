@@ -20,8 +20,8 @@ public class ApplicationDTO {
     private String nodeId; // the nodeUUID of the edge device (global id), not on the local edge device, remove because this is ambiguous
     private String endpoint; // the endpoint of the application
     private String name;
-    @Builder.Default
-    private List<ApplicationComponentDTO> applicationComponents = new ArrayList<>();
+//    @Builder.Default
+//    private List<ApplicationComponentDTO> applicationComponents = new ArrayList<>();
 
     public static ApplicationDTO fromApplication(Application application) {
         return ApplicationDTO.builder()
@@ -30,7 +30,7 @@ public class ApplicationDTO {
                 .nodeId(String.valueOf(application.getNodeId()))
                 .endpoint(String.valueOf(application.getEndpoint()))
                 .name(application.getName())
-                .applicationComponents(application.getApplicationComponents().stream().map(ApplicationComponentDTO::fromApplicationComponent).toList())
+//                .applicationComponents(application.getApplicationComponents().stream().map(ApplicationComponentDTO::fromApplicationComponent).toList())
                 .build();
     }
 

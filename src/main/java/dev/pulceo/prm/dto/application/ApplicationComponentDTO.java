@@ -22,8 +22,8 @@ public class ApplicationComponentDTO {
     private int port;
     private String protocol;
     private ApplicationComponentType applicationComponentType;
-//    @Builder.Default
-//    private Map<String, String> environmentVariables = new HashMap<>();
+    @Builder.Default
+    private Map<String, String> environmentVariables = new HashMap<>();
 
     public static ApplicationComponentDTO fromApplicationComponent(ApplicationComponent applicationComponent) {
         return ApplicationComponentDTO.builder()
@@ -34,7 +34,7 @@ public class ApplicationComponentDTO {
                 .port(applicationComponent.getPort())
                 .protocol(applicationComponent.getProtocol())
                 .applicationComponentType(applicationComponent.getApplicationComponentType())
-//                .environmentVariables(applicationComponent.getEnvironmentVariables())
+                .environmentVariables(applicationComponent.getEnvironmentVariables())
                 .build();
     }
 }
