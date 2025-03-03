@@ -75,3 +75,14 @@ Date: Fri, 08 Mar 2024 01:41:00 GMT
 ```bash
 kubectl delete -f psm-deployment.yaml
 ```
+
+## Start developing
+
+### Preparations
+
+- Install [Docker](https://www.docker.com/) on your machine by following the official installation guide
+- Run a local MQTT broker ([Eclipse Mosquitto](https://mosquitto.org/)) on your system via [Docker Compose](https://docs.docker.com/compose/)
+
+```bash
+docker-compose -f mqtt/docker-compose.yml up -d 
+```

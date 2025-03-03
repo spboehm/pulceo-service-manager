@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:1.6.15
+    ports:
+      - "127.0.0.1:1883:1883"
+    networks:
+      - pulceo-mosquitto
+    restart: unless-stopped
+
+networks:
+  pulceo-mosquitto:
