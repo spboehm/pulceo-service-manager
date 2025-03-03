@@ -41,7 +41,8 @@ public class ApplicationControllerIntegrationTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws InterruptedException {
+        Thread.sleep(100);
         this.applicationRepository.deleteAll();
     }
 

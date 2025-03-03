@@ -24,7 +24,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(properties = { "webclient.scheme=http"})
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ApplicationServiceIntegrationTests {
 
     @Autowired
@@ -55,7 +54,7 @@ public class ApplicationServiceIntegrationTests {
     }
 
     @AfterAll
-    public void tearDown() {
+    public static void tearDown() {
         ApplicationServiceIntegrationTests.wireMockServerForPRM.shutdown();
         ApplicationServiceIntegrationTests.wireMockServerForPNA.shutdown();
         // applicationRepository.deleteAll();
