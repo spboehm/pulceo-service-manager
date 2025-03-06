@@ -27,6 +27,11 @@
 k3d cluster create pulceo-test --api-port 40476 --port 80:80@loadbalancer
 ```
 
+Supported version:
+
+- k3d version v5.6.0
+- k3s version v1.27.4-k3s1 (default)
+
 ## Run with k3d
 
 **[TODO]: Add a step to generate the secrets**
@@ -85,4 +90,9 @@ kubectl delete -f psm-deployment.yaml
 
 ```bash
 docker-compose -f mqtt/docker-compose.yml up -d 
+```
+
+- Run a local test cluster with k3d
+```bash
+k3d cluster create pulceo-test --api-port 40476 --port 80:80@loadbalancer
 ```
