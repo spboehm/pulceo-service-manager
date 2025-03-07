@@ -37,7 +37,7 @@ public class TaskControllerIntegrationTests {
     }
 
     @Test
-    public void testCreateTaskWithPayload() throws Exception {
+    public void testCreateTaskWithPayloadAndMetaData() throws Exception {
         // given
         HashMap<String,String> payload = new HashMap<>();
         payload.put("key", "value");
@@ -45,22 +45,34 @@ public class TaskControllerIntegrationTests {
         Timestamp timeStampCreated = Timestamp.valueOf(LocalDateTime.now());
         byte[] payloadAsBytes = objectMapper.writeValueAsBytes(payload);
 
+        HashMap<String, String> requirements = new HashMap<>();
+        requirements.put("cpu_mips", "3000");
+
+        HashMap<String, String> properties = new HashMap<>();
+        properties.put("priority", "1");
+
         CreateNewTaskDTO createNewTaskDTO = CreateNewTaskDTO.builder()
                 .created(timeStampCreated)
                 .payload(payloadAsBytes)
+                .requirements(requirements)
+                .properties(properties)
                 .build();
         String createNewTaskDTOJson = this.objectMapper.writeValueAsString(createNewTaskDTO);
 
         // when and then
         this.mockMvc.perform(post("/api/v1/tasks")
-                .contentType("application/json")
-                .content(createNewTaskDTOJson))
+                        .contentType("application/json")
+                        .content(createNewTaskDTOJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.created").isNotEmpty())
                 .andExpect(jsonPath("$.arrived").isNotEmpty())
                 .andExpect(jsonPath("$.sizeOfWorkload").value(payloadAsBytes.length))
                 .andExpect(jsonPath("$.sizeDuringTransmission").value(payloadAsBytes.length))
-                .andExpect(jsonPath("$.deadline").value(100));
+                .andExpect(jsonPath("$.deadline").value(100))
+                .andExpect(jsonPath("$.requirements").isNotEmpty())
+                .andExpect(jsonPath("$.requirements.cpu_mips").value("3000"))
+                .andExpect(jsonPath("$.properties").isNotEmpty())
+                .andExpect(jsonPath("$.properties.priority").value("1"));
     }
 
 
