@@ -2,6 +2,7 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.repository.TaskRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class TaskService {
@@ -43,7 +46,7 @@ public class TaskService {
 
         // TODO create temporary object to be persisted and return immediately
 
-        /* TODO: make persistence non-blocking by invoking threadpooling with the interaction of redis and sql */
+        /* TODO: make persistence non-blocking by invoking thread pooling with the interaction of redis and sql */
 
         // put to redis
 
@@ -52,6 +55,9 @@ public class TaskService {
         return this.taskRepository.save(task);
     }
 
-
+    @Transactional
+    public Optional<Task> readTaskByUUID(UUID taskUUID) {
+        return this.taskRepository.findByUuid((taskUUID));
+    }
 
 }

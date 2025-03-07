@@ -2,11 +2,14 @@ package dev.pulceo.prm.repository;
 
 import dev.pulceo.prm.model.application.Application;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 public interface ApplicationRepository extends CrudRepository<Application, Long>{
 
     @EntityGraph(value="graph.Application.applicationComponents")

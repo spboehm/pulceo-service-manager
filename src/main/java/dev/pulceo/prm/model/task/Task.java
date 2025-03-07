@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
-import org.springframework.cglib.core.Local;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -39,13 +38,13 @@ public class Task extends BaseEntity {
     @Builder.Default
     private int deadline = 100; // tolerable deadline in ms
     @Builder.Default
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="requirement_key")
     @Column(name="requirement_value")
     @CollectionTable(name="task_requirements", joinColumns=@JoinColumn(name="task_requirement_id"))
     private Map<String, String> requirements = new HashMap<>(); // requirements for the task
     @Builder.Default
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name="property_key")
     @Column(name="property_value")
     @CollectionTable(name="task_properties", joinColumns=@JoinColumn(name="task_property_id"))

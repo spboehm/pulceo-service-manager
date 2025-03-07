@@ -6,6 +6,8 @@ import lombok.experimental.SuperBuilder;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -13,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public class TaskDTO {
+public class CreateNewTaskResponseDTO {
 
     private UUID taskUUID;
     @Builder.Default
@@ -23,15 +25,21 @@ public class TaskDTO {
     private long sizeOfWorkload; // size of the input data
     private long sizeDuringTransmission; // (compressed) size of workload during transmissio
     private int deadline; // tolerable deadline in ms
+    @Builder.Default
+    private Map<String, String> requirements = new HashMap<>(); // requirements for the task
+    @Builder.Default
+    private Map<String, String> properties = new HashMap<>(); // properties of the task
 
-    public static TaskDTO fromTask(Task task) {
-        return TaskDTO.builder()
+    public static CreateNewTaskResponseDTO fromTask(Task task) {
+        return CreateNewTaskResponseDTO.builder()
                 .taskUUID(task.getUuid())
                 .created(task.getCreated())
                 .arrived(task.getArrived())
                 .sizeOfWorkload(task.getSizeOfWorkload())
                 .sizeDuringTransmission(task.getSizeDuringTransmission())
                 .deadline(task.getDeadline())
+                .requirements(task.getRequirements())
+                .properties(task.getProperties())
                 .build();
     }
 }

@@ -75,7 +75,11 @@ public class TaskControllerIntegrationTests {
                 .andExpect(jsonPath("$.properties.priority").value("1"));
     }
 
+    @Test
+    public void testReadTaskByUUID() {
 
 
+
+    }
 
 }
