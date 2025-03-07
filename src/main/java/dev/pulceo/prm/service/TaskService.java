@@ -41,7 +41,14 @@ public class TaskService {
             task.setSizeDuringTransmission(task.getPayload().length);
         }
 
-        // persist
+        // TODO create temporary object to be persisted and return immediately
+
+        /* TODO: make persistence non-blocking by invoking threadpooling with the interaction of redis and sql */
+
+        // put to redis
+
+        // put to sql db
+
         return this.taskRepository.save(task);
     }
 

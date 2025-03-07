@@ -8,6 +8,13 @@ services:
     networks:
       - pulceo-mosquitto
     restart: unless-stopped
+  redis:
+      image: redis:7.0.11
+      ports:
+        - "127.0.0.1:6379:6379"
+      networks:
+        - pulceo-redis
 
 networks:
   pulceo-mosquitto:
+  pulceo-redis:

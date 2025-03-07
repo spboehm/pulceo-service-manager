@@ -87,9 +87,10 @@ kubectl delete -f psm-deployment.yaml
 
 - Install [Docker](https://www.docker.com/) on your machine by following the official installation guide
 - Run a local MQTT broker ([Eclipse Mosquitto](https://mosquitto.org/)) on your system via [Docker Compose](https://docs.docker.com/compose/)
+- Run a local redis server ([Redis](https://redis.io/)) via [Docker Compose](https://docs.docker.com/compose/)
 
 ```bash
-docker-compose -f mqtt/docker-compose.yml up -d 
+docker-compose -f middleware/docker-compose.yml up -d 
 ```
 
 - Run a local test cluster with k3d

@@ -63,7 +63,6 @@ public class Task extends BaseEntity {
                 .build();
     }
 
-
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
