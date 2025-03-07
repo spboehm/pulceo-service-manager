@@ -1,7 +1,9 @@
 package dev.pulceo.prm.model.task;
 
+import dev.pulceo.prm.dto.task.CreateNewTaskDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,6 +50,19 @@ public class Task extends BaseEntity {
     @Column(name="property_value")
     @CollectionTable(name="task_properties", joinColumns=@JoinColumn(name="task_property_id"))
     private Map<String, String> properties = new HashMap<>(); // properties of the task
+
+    public static Task fromCreateNewTaskDTO(@Valid CreateNewTaskDTO createNewTaskDTO) {
+        return Task.builder()
+                .created(createNewTaskDTO.getCreated())
+                .payload(createNewTaskDTO.getPayload())
+                .sizeOfWorkload(createNewTaskDTO.getSizeOfWorkload())
+                .sizeDuringTransmission(createNewTaskDTO.getSizeDuringTransmission())
+                .deadline(createNewTaskDTO.getDeadline())
+                .requirements(createNewTaskDTO.getRequirements())
+                .properties(createNewTaskDTO.getProperties())
+                .build();
+    }
+
 
     @Override
     public final boolean equals(Object o) {
