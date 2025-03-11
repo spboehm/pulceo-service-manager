@@ -14,7 +14,6 @@ import java.util.Map;
 @NoArgsConstructor
 @SuperBuilder
 public class CreateNewTaskDTO {
-
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
     @Builder.Default

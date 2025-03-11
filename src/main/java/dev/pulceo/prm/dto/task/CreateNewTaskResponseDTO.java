@@ -1,6 +1,7 @@
 package dev.pulceo.prm.dto.task;
 
 import dev.pulceo.prm.model.task.Task;
+import dev.pulceo.prm.model.task.TaskMetaData;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class CreateNewTaskResponseDTO {
 
     private UUID taskUUID;
+    private TaskMetaDataDTO taskMetaData;
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
     @Builder.Default
@@ -33,6 +35,7 @@ public class CreateNewTaskResponseDTO {
     public static CreateNewTaskResponseDTO fromTask(Task task) {
         return CreateNewTaskResponseDTO.builder()
                 .taskUUID(task.getUuid())
+                .taskMetaData(TaskMetaDataDTO.from(task.getTaskMetaData()))
                 .created(task.getCreated())
                 .arrived(task.getArrived())
                 .sizeOfWorkload(task.getSizeOfWorkload())

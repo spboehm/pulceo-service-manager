@@ -13,7 +13,6 @@ import org.hibernate.proxy.HibernateProxy;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,6 +24,12 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Task extends BaseEntity {
 
+    @Builder.Default
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    private TaskMetaData taskMetaData = TaskMetaData.builder().build();
+    @Builder.Default
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    private TaskScheduling taskScheduling = TaskScheduling.builder().build();
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
     @Builder.Default
@@ -39,15 +44,15 @@ public class Task extends BaseEntity {
     private int deadline = 100; // tolerable deadline in ms
     @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name="requirement_key")
-    @Column(name="requirement_value")
-    @CollectionTable(name="task_requirements", joinColumns=@JoinColumn(name="task_requirement_id"))
+    @MapKeyColumn(name = "requirement_key")
+    @Column(name = "requirement_value")
+    @CollectionTable(name = "task_requirements", joinColumns = @JoinColumn(name = "task_requirement_id"))
     private Map<String, String> requirements = new HashMap<>(); // requirements for the task
     @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name="property_key")
-    @Column(name="property_value")
-    @CollectionTable(name="task_properties", joinColumns=@JoinColumn(name="task_property_id"))
+    @MapKeyColumn(name = "property_key")
+    @Column(name = "property_value")
+    @CollectionTable(name = "task_properties", joinColumns = @JoinColumn(name = "task_property_id"))
     private Map<String, String> properties = new HashMap<>(); // properties of the task
 
     public static Task fromCreateNewTaskDTO(@Valid CreateNewTaskDTO createNewTaskDTO) {
@@ -76,18 +81,5 @@ public class Task extends BaseEntity {
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "(" +
-                "properties = " + properties + ", " +
-                "requirements = " + requirements + ", " +
-                "deadline = " + deadline + ", " +
-                "sizeDuringTransmission = " + sizeDuringTransmission + ", " +
-                "sizeOfWorkload = " + sizeOfWorkload + ", " +
-                "payload = " + Arrays.toString(payload) + ", " +
-                "arrived = " + arrived + ", " +
-                "created = " + created + ")";
     }
 }

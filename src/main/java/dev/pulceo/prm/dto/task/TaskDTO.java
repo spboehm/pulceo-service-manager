@@ -16,6 +16,8 @@ import java.util.UUID;
 public class TaskDTO {
 
     private UUID taskUUID;
+    private TaskMetaDataDTO taskMetaData;
+    private TaskSchedulingDTO taskScheduling;
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
     @Builder.Default
@@ -27,6 +29,8 @@ public class TaskDTO {
     public static TaskDTO fromTask(Task task) {
         return TaskDTO.builder()
                 .taskUUID(task.getUuid())
+                .taskMetaData(TaskMetaDataDTO.from(task.getTaskMetaData()))
+                .taskScheduling(TaskSchedulingDTO.from(task.getTaskScheduling()))
                 .created(task.getCreated())
                 .arrived(task.getArrived())
                 .sizeOfWorkload(task.getSizeOfWorkload())

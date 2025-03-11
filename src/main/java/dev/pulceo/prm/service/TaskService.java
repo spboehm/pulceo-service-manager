@@ -55,6 +55,7 @@ public class TaskService {
         return this.taskRepository.save(task);
     }
 
+    @Transactional
     public Optional<Task> readTaskByUUID(UUID taskUUID) {
         return this.taskRepository.findByUuid((taskUUID));
     }
