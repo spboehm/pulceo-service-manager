@@ -5,7 +5,7 @@ import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,8 +33,15 @@ public class TaskStatusLog extends BaseEntity {
     @Builder.Default
     private String modifiedBy = "psm";
     @Builder.Default
+    private String previousStateOfTask = "";
+    @Builder.Default
+    private String newStateOfTask = "";
+    @Builder.Default
     private String comment = "";
-    @OneToOne(targetEntity = TaskScheduling.class, cascade = { CascadeType.MERGE, CascadeType.PERSIST })
+    @ManyToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @JoinColumn(name = "task_id")
+    private Task task; // task
+    @ManyToOne(targetEntity = TaskScheduling.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinColumn(name = "taskScheduling_id")
     private TaskScheduling taskScheduling;
 

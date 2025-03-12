@@ -2,10 +2,7 @@ package dev.pulceo.prm.model.task;
 
 import dev.pulceo.prm.dto.task.TaskSchedulingDTO;
 import dev.pulceo.prm.model.BaseEntity;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,13 +29,20 @@ public class TaskScheduling extends BaseEntity {
     private String applicationComponentId = ""; // global application component id
     @Builder.Default
     private TaskStatus status = TaskStatus.NEW; // task status
+    @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @JoinColumn(name = "task_id")
+    private Task task; // task
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TaskStatusLog> statusLogs; // task status logs
 
-    public TaskScheduling addTaskStatusLog(TaskStatusLog taskStatusLog) {
+    public void addTask(Task task) {
+        this.task = task;
+        task.setTaskScheduling(this);
+    }
+
+    public void addTaskStatusLog(TaskStatusLog taskStatusLog) {
         statusLogs.add(taskStatusLog);
         taskStatusLog.setTaskScheduling(this);
-        return this;
     }
 
     public static TaskScheduling fromTaskSchedulingDTO(@Valid TaskSchedulingDTO taskSchedulingDTO) {

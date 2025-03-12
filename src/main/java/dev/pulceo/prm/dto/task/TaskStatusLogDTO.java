@@ -22,6 +22,10 @@ public class TaskStatusLogDTO {
     @Builder.Default
     private String modifiedBy = "psm";
     @Builder.Default
+    private String previousStateOfTask = "";
+    @Builder.Default
+    private String newStateOfTask = "";
+    @Builder.Default
     private String comment = "";
 
     public static TaskStatusLogDTO from(TaskStatusLog taskStatusLog) {
@@ -30,6 +34,8 @@ public class TaskStatusLogDTO {
                 .previousStatus(taskStatusLog.getPreviousStatus())
                 .newStatus(taskStatusLog.getNewStatus())
                 .modifiedBy(taskStatusLog.getModifiedBy())
+                .previousStateOfTask(taskStatusLog.getPreviousStateOfTask())
+                .newStateOfTask(taskStatusLog.getNewStateOfTask())
                 .comment(taskStatusLog.getComment())
                 .build();
     }

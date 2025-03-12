@@ -54,6 +54,11 @@ public class TaskService {
             task.setSizeDuringTransmission(task.getPayload().length);
         }
 
+        // TODO: set task scheduling references
+        TaskScheduling taskScheduling = TaskScheduling.builder().build();
+        taskScheduling.addTask(task);
+        task.setTaskScheduling(taskScheduling);
+
         // TODO create temporary object to be persisted and return immediately
 
         /* TODO: make persistence non-blocking by invoking thread pooling with the interaction of redis and sql */
@@ -70,7 +75,7 @@ public class TaskService {
         return this.taskRepository.findByUuid((taskUUID));
     }
 
-    /* update task scheduling */
+    /* Task Scheduling */
     @Transactional
     public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
@@ -80,7 +85,10 @@ public class TaskService {
         TaskStatusLog taskStatusLog = TaskStatusLog.builder()
                 .previousStatus(taskScheduling.getStatus())
                 .newStatus(updatedTaskScheduling.getStatus())
+                .previousStateOfTask(taskScheduling.toString())
+                .newStateOfTask(updatedTaskScheduling.toString())
                 .taskScheduling(taskScheduling)
+                .task(task)
                 .build();
 
         // update task scheduling
@@ -89,20 +97,18 @@ public class TaskService {
         taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
         taskScheduling.setStatus(updatedTaskScheduling.getStatus());
         taskScheduling.addTaskStatusLog(taskStatusLog);
+        taskScheduling.addTask(task);
 
         // persist and return
         return this.taskSchedulingRepository.save(taskScheduling);
     }
 
-    public List<TaskStatusLog> readAllLogsByTask(UUID taskUUID) {
-        return new ArrayList<>();
-    }
-
-    public List<TaskStatusLog> readAllTaskStatusLogs(UUID taskUUID) {
-        Optional<TaskScheduling> taskScheduling = this.taskSchedulingRepository.findByUuid(taskUUID);
-        if (taskScheduling.isEmpty()) {
+    /* TaskStatusLogs */
+    public List<TaskStatusLog> readAllTaskStatusLogsByTaskId(Long id) {
+        List<TaskStatusLog> taskStatusLogs = this.taskStatusLogRepository.findTaskStatusLogsByTaskId(id);
+        if (taskStatusLogs.isEmpty()) {
             return new ArrayList<>();
         }
-        return taskScheduling.get().getStatusLogs();
+        return taskStatusLogs;
     }
 }

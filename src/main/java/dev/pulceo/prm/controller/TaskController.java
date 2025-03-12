@@ -62,7 +62,6 @@ public class TaskController {
         return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
     }
 
-
     /* logs */
     @GetMapping("/{id}/scheduling/logs")
     public ResponseEntity<List<TaskStatusLogDTO>> readsTaskSchedulingLogs(@PathVariable UUID id) {
@@ -70,7 +69,7 @@ public class TaskController {
         if (task.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
-        List<TaskStatusLog> taskStatusLogs = this.taskService.readAllTaskStatusLogs(task.get().getUuid());
+        List<TaskStatusLog> taskStatusLogs = this.taskService.readAllTaskStatusLogsByTaskId(task.get().getId());
         List<TaskStatusLogDTO> taskStatusLogDTOs = new ArrayList<>();
         for (TaskStatusLog taskStatusLog : taskStatusLogs) {
             taskStatusLogDTOs.add(TaskStatusLogDTO.from(taskStatusLog));
