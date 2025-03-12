@@ -35,6 +35,12 @@ public class TaskScheduling extends BaseEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TaskStatusLog> statusLogs; // task status logs
 
+    public TaskScheduling addTaskStatusLog(TaskStatusLog taskStatusLog) {
+        statusLogs.add(taskStatusLog);
+        taskStatusLog.setTaskScheduling(this);
+        return this;
+    }
+
     public static TaskScheduling fromTaskSchedulingDTO(@Valid TaskSchedulingDTO taskSchedulingDTO) {
         return TaskScheduling.builder()
                 .nodeId(taskSchedulingDTO.getNodeId())

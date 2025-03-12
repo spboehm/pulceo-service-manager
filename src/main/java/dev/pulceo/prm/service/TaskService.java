@@ -5,6 +5,7 @@ import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.repository.TaskRepository;
 import dev.pulceo.prm.repository.TaskSchedulingRepository;
+import dev.pulceo.prm.repository.TaskStatusLogRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,11 +26,13 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskSchedulingRepository taskSchedulingRepository;
+    private final TaskStatusLogRepository taskStatusLogRepository;
 
     @Autowired
-    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository) {
+    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository) {
         this.taskRepository = taskRepository;
         this.taskSchedulingRepository = taskSchedulingRepository;
+        this.taskStatusLogRepository = taskStatusLogRepository;
     }
 
     public Task createTask(Task task) {
@@ -67,17 +70,25 @@ public class TaskService {
         return this.taskRepository.findByUuid((taskUUID));
     }
 
-    /* update task scheudling */
+    /* update task scheduling */
     @Transactional
     public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
         TaskScheduling taskScheduling = task.getTaskScheduling();
+
+        // add to TaskStatusLog history of TaskScheduling
+        TaskStatusLog taskStatusLog = TaskStatusLog.builder()
+                .previousStatus(taskScheduling.getStatus())
+                .newStatus(updatedTaskScheduling.getStatus())
+                .taskScheduling(taskScheduling)
+                .build();
 
         // update task scheduling
         taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
         taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
         taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
         taskScheduling.setStatus(updatedTaskScheduling.getStatus());
+        taskScheduling.addTaskStatusLog(taskStatusLog);
 
         // persist and return
         return this.taskSchedulingRepository.save(taskScheduling);
