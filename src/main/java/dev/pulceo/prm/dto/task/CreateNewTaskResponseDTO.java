@@ -1,7 +1,6 @@
 package dev.pulceo.prm.dto.task;
 
 import dev.pulceo.prm.model.task.Task;
-import dev.pulceo.prm.model.task.TaskMetaData;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -22,8 +21,10 @@ public class CreateNewTaskResponseDTO {
     private TaskMetaDataDTO taskMetaData;
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
+    private String createdBy; // user who created the task
     @Builder.Default
     private Timestamp arrived = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task arrived on device
+    private String arrivedAt;
     private long sizeOfWorkload; // size of the input data
     private long sizeDuringTransmission; // (compressed) size of workload during transmissio
     private int deadline; // tolerable deadline in ms
@@ -37,7 +38,9 @@ public class CreateNewTaskResponseDTO {
                 .taskUUID(task.getUuid())
                 .taskMetaData(TaskMetaDataDTO.from(task.getTaskMetaData()))
                 .created(task.getCreated())
+                .createdBy(task.getCreatedBy())
                 .arrived(task.getArrived())
+                .arrivedAt(task.getArrivedAt())
                 .sizeOfWorkload(task.getSizeOfWorkload())
                 .sizeDuringTransmission(task.getSizeDuringTransmission())
                 .deadline(task.getDeadline())

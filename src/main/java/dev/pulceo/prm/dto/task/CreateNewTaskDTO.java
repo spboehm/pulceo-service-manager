@@ -17,6 +17,8 @@ public class CreateNewTaskDTO {
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
     @Builder.Default
+    private String createdBy = ""; // user who created the task
+    @Builder.Default
     private byte[] payload = new byte[0]; // payload of the task
     @Builder.Default
     private long sizeOfWorkload = 0; // size of the input data

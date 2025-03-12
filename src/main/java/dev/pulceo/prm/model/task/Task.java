@@ -33,7 +33,11 @@ public class Task extends BaseEntity {
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
     @Builder.Default
+    private String createdBy = ""; // user who created the task
+    @Builder.Default
     private Timestamp arrived = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task has arrived at the servers
+    @Builder.Default
+    private String arrivedAt = "psm"; // user who has arrived the task at the servers
     @Builder.Default
     private byte[] payload = new byte[0]; // payload of the task
     @Builder.Default

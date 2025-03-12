@@ -20,6 +20,8 @@ public class TaskDTO {
     private TaskSchedulingDTO taskScheduling;
     @Builder.Default
     private Timestamp created = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task is created on device
+    private String createdBy; // user who created the task
+    private String arrivedAt; // user who has arrived the task at the servers
     @Builder.Default
     private Timestamp arrived = Timestamp.valueOf(LocalDateTime.now()); // timestamp where task arrived on device
     private long sizeOfWorkload; // size of the input data
@@ -32,7 +34,9 @@ public class TaskDTO {
                 .taskMetaData(TaskMetaDataDTO.from(task.getTaskMetaData()))
                 .taskScheduling(TaskSchedulingDTO.from(task.getTaskScheduling()))
                 .created(task.getCreated())
+                .createdBy(task.getCreatedBy())
                 .arrived(task.getArrived())
+                .arrivedAt(task.getArrivedAt())
                 .sizeOfWorkload(task.getSizeOfWorkload())
                 .sizeDuringTransmission(task.getSizeDuringTransmission())
                 .deadline(task.getDeadline())
