@@ -10,6 +10,8 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -27,15 +29,19 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskSchedulingRepository taskSchedulingRepository;
     private final TaskStatusLogRepository taskStatusLogRepository;
+    private final PublishSubscribeChannel taskServiceChannel;
+    private final EventHandler eventHandler;
 
     @Autowired
-    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository) {
+    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler) {
         this.taskRepository = taskRepository;
         this.taskSchedulingRepository = taskSchedulingRepository;
         this.taskStatusLogRepository = taskStatusLogRepository;
+        this.taskServiceChannel = taskServiceChannel;
+        this.eventHandler = eventHandler;
     }
 
-    public Task createTask(Task task) {
+    public Task createTask(Task task) throws InterruptedException {
 
         // TODO: validation of Task
 
@@ -68,8 +74,14 @@ public class TaskService {
         // put to sql db
 
         // TODO: broadcast to listener of task, e.g., via MQTT
+        Task savedTask = this.taskRepository.save(task);
+        this.taskServiceChannel.send(new GenericMessage<>(task));
+/*        this.eventHandler.handleEvent(PulceoEvent.builder()
+                .eventType(EventType.APP)
+                .payload("test")
+                .build());*/
 
-        return this.taskRepository.save(task);
+        return savedTask;
     }
 
     @Transactional

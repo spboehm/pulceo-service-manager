@@ -29,9 +29,10 @@ public class MQTTConfig {
     /* Outbound */
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
+        System.out.println(mqttBrokerURL);
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
-        options.setServerURIs(new String[] {mqttBrokerURL});
+        options.setServerURIs(new String[]{mqttBrokerURL});
         options.setUserName(mqttBrokerUsername);
         options.setPassword(mqttBrokerPassword.toCharArray());
         options.setAutomaticReconnect(true);
@@ -40,6 +41,7 @@ public class MQTTConfig {
         return factory;
     }
 
+    /* events */
     @Bean
     public MessageChannel mqttOutboundChannel() {
         return new DirectChannel();
@@ -55,5 +57,23 @@ public class MQTTConfig {
         messageHandler.setConverter(new DefaultPahoMessageConverter());
         return messageHandler;
     }
+
+    /* tasks */
+    @Bean
+    public MessageChannel mqttOutboundTaskChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    @ServiceActivator(inputChannel = "mqttOutboundTaskChannel")
+    public MessageHandler mqttOutboundTask() {
+        MqttPahoMessageHandler messageHandler =
+                new MqttPahoMessageHandler(UUID.randomUUID().toString(), mqttClientFactory());
+        messageHandler.setAsync(true);
+        messageHandler.setDefaultTopic("dt/pulceo/tasks");
+        messageHandler.setConverter(new DefaultPahoMessageConverter());
+        return messageHandler;
+    }
+
 
 }

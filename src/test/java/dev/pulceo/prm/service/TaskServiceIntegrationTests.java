@@ -7,13 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest(properties = { "webclient.scheme=http"})
+@SpringBootTest(properties = {"webclient.scheme=http"})
 public class TaskServiceIntegrationTests {
 
 
@@ -29,7 +25,7 @@ public class TaskServiceIntegrationTests {
     }
 
     @Test
-    public void testCreateTask() {
+    public void testCreateTask() throws InterruptedException {
         // given
         Task task = Task.builder().build();
 

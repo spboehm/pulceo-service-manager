@@ -31,7 +31,7 @@ public class TaskController {
     // TODO: Get task list by id
 
     @PostMapping
-    public ResponseEntity<CreateNewTaskResponseDTO> createNewTask(@Valid @RequestBody CreateNewTaskDTO createNewTaskDTO) {
+    public ResponseEntity<CreateNewTaskResponseDTO> createNewTask(@Valid @RequestBody CreateNewTaskDTO createNewTaskDTO) throws InterruptedException {
         Task task = this.taskService.createTask(Task.fromCreateNewTaskDTO(createNewTaskDTO));
         return ResponseEntity.status(201).body(CreateNewTaskResponseDTO.fromTask(task));
     }
