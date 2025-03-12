@@ -1,5 +1,6 @@
 package dev.pulceo.prm.model.task;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import dev.pulceo.prm.dto.task.TaskSchedulingDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
@@ -31,6 +32,7 @@ public class TaskScheduling extends BaseEntity {
     private TaskStatus status = TaskStatus.NEW; // task status
     @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinColumn(name = "task_id")
+    @JsonBackReference
     private Task task; // task
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TaskStatusLog> statusLogs; // task status logs
