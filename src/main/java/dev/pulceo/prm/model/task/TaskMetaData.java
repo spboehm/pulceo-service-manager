@@ -16,12 +16,12 @@ import lombok.experimental.SuperBuilder;
 public class TaskMetaData extends BaseEntity {
 
     @Builder.Default
-    private String callbackProtocol = "";
+    private String callbackProtocol = ""; // statically generated, never changed
     @Builder.Default
-    private String callbackEndpoint = "";
+    private String callbackEndpoint = ""; // statically generated, never changed
     @Builder.Default
-    private String destinationApplication = "";
+    private String destinationApplication = ""; // statically generated, never changed
     @Builder.Default
-    private String destinationApplicationComponent = "";
-    
+    private String destinationApplicationComponent = ""; // statically generated, never changed
+
 }
