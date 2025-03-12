@@ -67,6 +67,8 @@ public class TaskService {
 
         // put to sql db
 
+        // TODO: broadcast to listener of task, e.g., via MQTT
+
         return this.taskRepository.save(task);
     }
 
