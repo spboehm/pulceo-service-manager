@@ -23,8 +23,10 @@ public class TaskStatusLog extends BaseEntity {
 
     @Builder.Default
     private Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-    private TaskStatus previousStatus;
-    private TaskStatus newStatus;
+    @Builder.Default
+    private TaskStatus previousStatus = TaskStatus.NEW;
+    @Builder.Default
+    private TaskStatus newStatus = TaskStatus.NEW;
     @Builder.Default
     private String modifiedBy = "psm";
     @Builder.Default

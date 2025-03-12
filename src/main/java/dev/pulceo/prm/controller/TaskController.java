@@ -1,10 +1,8 @@
 package dev.pulceo.prm.controller;
 
-import dev.pulceo.prm.dto.task.CreateNewTaskDTO;
-import dev.pulceo.prm.dto.task.CreateNewTaskResponseDTO;
-import dev.pulceo.prm.dto.task.TaskDTO;
-import dev.pulceo.prm.dto.task.TaskStatusLogDTO;
+import dev.pulceo.prm.dto.task.*;
 import dev.pulceo.prm.model.task.Task;
+import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.service.TaskService;
 import jakarta.validation.Valid;
@@ -41,21 +39,38 @@ public class TaskController {
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> readTaskById(@PathVariable UUID id) {
         Optional<Task> task = this.taskService.readTaskByUUID(id);
+
+        System.out.println(task.toString());
+
+
         if (task.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
         return ResponseEntity.status(200).body(TaskDTO.fromTask(task.get()));
     }
 
-
     /* scheduling */
-    @GetMapping("/{id}/scheduling/logs")
-    public ResponseEntity<List<TaskStatusLogDTO>> readTaskScheduling(@PathVariable String id) {
-        Optional<Task> task = this.taskService.readTaskByUUID(UUID.fromString(id));
+    @PutMapping("/{id}/scheduling")
+    ResponseEntity<TaskSchedulingDTO> updateTaskScheduling(@PathVariable UUID id, @Valid @RequestBody TaskSchedulingDTO taskSchedulingDTO) {
+        Optional<Task> task = this.taskService.readTaskByUUID(id);
+
+        TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(id, TaskScheduling.fromTaskSchedulingDTO(taskSchedulingDTO));
+
         if (task.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
-        List<TaskStatusLog> taskStatusLogs = this.taskService.readTaskStatusLogs(task.get().getUuid());
+        return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
+    }
+
+
+    /* logs */
+    @GetMapping("/{id}/scheduling/logs")
+    public ResponseEntity<List<TaskStatusLogDTO>> readsTaskSchedulingLogs(@PathVariable UUID id) {
+        Optional<Task> task = this.taskService.readTaskByUUID(id);
+        if (task.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        }
+        List<TaskStatusLog> taskStatusLogs = this.taskService.readAllTaskStatusLogs(task.get().getUuid());
         List<TaskStatusLogDTO> taskStatusLogDTOs = new ArrayList<>();
         for (TaskStatusLog taskStatusLog : taskStatusLogs) {
             taskStatusLogDTOs.add(TaskStatusLogDTO.from(taskStatusLog));

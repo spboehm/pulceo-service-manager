@@ -1,10 +1,12 @@
 package dev.pulceo.prm.model.task;
 
+import dev.pulceo.prm.dto.task.TaskSchedulingDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
+import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,6 +35,15 @@ public class TaskScheduling extends BaseEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TaskStatusLog> statusLogs; // task status logs
 
+    public static TaskScheduling fromTaskSchedulingDTO(@Valid TaskSchedulingDTO taskSchedulingDTO) {
+        return TaskScheduling.builder()
+                .nodeId(taskSchedulingDTO.getNodeId())
+                .applicationId(taskSchedulingDTO.getApplicationId())
+                .applicationComponentId(taskSchedulingDTO.getApplicationComponentId())
+                .status(taskSchedulingDTO.getStatus())
+                .build();
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
@@ -47,5 +58,14 @@ public class TaskScheduling extends BaseEntity {
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" +
+                "nodeId = " + nodeId + ", " +
+                "applicationId = " + applicationId + ", " +
+                "applicationComponentId = " + applicationComponentId + ", " +
+                "status = " + status + ")";
     }
 }

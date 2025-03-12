@@ -67,11 +67,27 @@ public class TaskService {
         return this.taskRepository.findByUuid((taskUUID));
     }
 
+    /* update task scheudling */
+    @Transactional
+    public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) {
+        Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
+        TaskScheduling taskScheduling = task.getTaskScheduling();
+
+        // update task scheduling
+        taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
+        taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
+        taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
+        taskScheduling.setStatus(updatedTaskScheduling.getStatus());
+
+        // persist and return
+        return this.taskSchedulingRepository.save(taskScheduling);
+    }
+
     public List<TaskStatusLog> readAllLogsByTask(UUID taskUUID) {
         return new ArrayList<>();
     }
 
-    public List<TaskStatusLog> readTaskStatusLogs(UUID taskUUID) {
+    public List<TaskStatusLog> readAllTaskStatusLogs(UUID taskUUID) {
         Optional<TaskScheduling> taskScheduling = this.taskSchedulingRepository.findByUuid(taskUUID);
         if (taskScheduling.isEmpty()) {
             return new ArrayList<>();

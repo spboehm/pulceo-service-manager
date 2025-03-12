@@ -82,4 +82,16 @@ public class Task extends BaseEntity {
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" +
+                "deadline = " + deadline + ", " +
+                "sizeDuringTransmission = " + sizeDuringTransmission + ", " +
+                "sizeOfWorkload = " + sizeOfWorkload + ", " +
+                "arrived = " + arrived + ", " +
+                "created = " + created + ", " +
+                "taskScheduling = " + taskScheduling + ", " +
+                "taskMetaData = " + taskMetaData + ")";
+    }
 }
