@@ -39,6 +39,7 @@ public class Task extends BaseEntity {
     @Builder.Default
     private String arrivedAt = "psm"; // user who has arrived the task at the servers
     @Builder.Default
+    @Lob
     private byte[] payload = new byte[0]; // payload of the task
     @Builder.Default
     private long sizeOfWorkload = 0; // size of the input data

@@ -29,7 +29,6 @@ public class MQTTConfig {
     /* Outbound */
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
-        System.out.println(mqttBrokerURL);
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{mqttBrokerURL});
