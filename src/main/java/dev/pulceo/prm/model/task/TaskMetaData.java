@@ -23,5 +23,8 @@ public class TaskMetaData extends BaseEntity {
     private String destinationApplication = ""; // statically generated, never changed
     @Builder.Default
     private String destinationApplicationComponent = ""; // statically generated, never changed
-
+    @Builder.Default
+    private String destinationApplicationComponentProtocol = ""; // statically generated, never changed, e.g., http
+    @Builder.Default
+    private String destinationApplicationComponentEndpoint = ""; // statically generated, never changed, e.g., /api/test
 }

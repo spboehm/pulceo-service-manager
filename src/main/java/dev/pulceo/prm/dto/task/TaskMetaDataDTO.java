@@ -19,6 +19,10 @@ public class TaskMetaDataDTO {
     private String destinationApplication = "";
     @Builder.Default
     private String destinationApplicationComponent = "";
+    @Builder.Default
+    private String destinationApplicationComponentProtocol = ""; // statically generated, never changed, e.g., http
+    @Builder.Default
+    private String destinationApplicationComponentEndpoint = ""; // statically generated, never changed, e.g., /api/test
 
     public static TaskMetaDataDTO from(TaskMetaData taskMetaData) {
         return TaskMetaDataDTO.builder()
@@ -26,6 +30,8 @@ public class TaskMetaDataDTO {
                 .callbackEndpoint(taskMetaData.getCallbackEndpoint())
                 .destinationApplication(taskMetaData.getDestinationApplication())
                 .destinationApplicationComponent(taskMetaData.getDestinationApplicationComponent())
+                .destinationApplicationComponentProtocol(taskMetaData.getDestinationApplicationComponentProtocol())
+                .destinationApplicationComponentEndpoint(taskMetaData.getDestinationApplicationComponentEndpoint())
                 .build();
     }
 
