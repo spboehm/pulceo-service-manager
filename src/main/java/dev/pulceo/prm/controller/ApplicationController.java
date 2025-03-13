@@ -75,7 +75,7 @@ public class ApplicationController {
         return application;
     }
 
-    private static boolean checkIfUUID(String uuid)  {
+    private static boolean checkIfUUID(String uuid) {
         String uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
         return uuid.matches(uuidRegex);
     }
