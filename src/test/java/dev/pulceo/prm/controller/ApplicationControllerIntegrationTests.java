@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = { "webclient.scheme=http"})
+@SpringBootTest(properties = {"webclient.scheme=http"})
 @AutoConfigureMockMvc
 public class ApplicationControllerIntegrationTests {
 
@@ -47,7 +47,8 @@ public class ApplicationControllerIntegrationTests {
     }
 
     @BeforeAll
-    static void setupClass() {
+    static void setupClass() throws InterruptedException {
+        Thread.sleep(1000);
         ApplicationServiceIntegrationTests.wireMockServerForPRM.start();
         ApplicationServiceIntegrationTests.wireMockServerForPNA.start();
     }

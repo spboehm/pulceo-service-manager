@@ -1,15 +1,18 @@
 package dev.pulceo.prm.controller;
 
 import dev.pulceo.prm.dto.task.*;
+import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,13 +56,15 @@ public class TaskController {
     @PutMapping("/{id}/scheduling")
     ResponseEntity<TaskSchedulingDTO> updateTaskScheduling(@PathVariable UUID id, @Valid @RequestBody TaskSchedulingDTO taskSchedulingDTO) {
         Optional<Task> task = this.taskService.readTaskByUUID(id);
-
-        TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(id, TaskScheduling.fromTaskSchedulingDTO(taskSchedulingDTO));
-
         if (task.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
-        return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
+        try {
+            TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(id, TaskScheduling.fromTaskSchedulingDTO(taskSchedulingDTO));
+            return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
+        } catch (TaskServiceException e) {
+            return ResponseEntity.status(400).build();
+        }
     }
 
     /* logs */
@@ -75,6 +80,16 @@ public class TaskController {
             taskStatusLogDTOs.add(TaskStatusLogDTO.from(taskStatusLog));
         }
         return ResponseEntity.status(200).body(taskStatusLogDTOs);
+    }
+
+    // Exception Handler
+    @ExceptionHandler(value = TaskServiceException.class)
+    public ResponseEntity<CustomErrorResponse> handleTaskServiceException(TaskServiceException taskServiceException) {
+        CustomErrorResponse error = new CustomErrorResponse("BAD_REQUEST", taskServiceException.getMessage());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.setErrorMsg(taskServiceException.getMessage());
+        error.setTimestamp(LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
 }

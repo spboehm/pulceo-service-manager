@@ -9,9 +9,11 @@ import dev.pulceo.prm.model.application.ApplicationComponentProtocol;
 import dev.pulceo.prm.model.application.ApplicationComponentType;
 import dev.pulceo.prm.repository.ApplicationComponentRepository;
 import dev.pulceo.prm.repository.ApplicationRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.wiremock.WireMockSpring;
 
@@ -23,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest(properties = { "webclient.scheme=http"})
+@SpringBootTest(properties = {"webclient.scheme=http"})
 public class ApplicationServiceIntegrationTests {
 
     @Autowired
@@ -41,7 +43,7 @@ public class ApplicationServiceIntegrationTests {
 
     @BeforeAll
     static void setupClass() throws InterruptedException {
-        Thread.sleep(100);
+        Thread.sleep(1000);
         ApplicationServiceIntegrationTests.wireMockServerForPRM.start();
         ApplicationServiceIntegrationTests.wireMockServerForPNA.start();
 

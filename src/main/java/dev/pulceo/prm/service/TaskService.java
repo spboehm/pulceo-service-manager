@@ -1,5 +1,9 @@
 package dev.pulceo.prm.service;
 
+import dev.pulceo.prm.api.PnaApi;
+import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaDTO;
+import dev.pulceo.prm.api.exception.PnaApiException;
+import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatusLog;
@@ -31,14 +35,17 @@ public class TaskService {
     private final TaskStatusLogRepository taskStatusLogRepository;
     private final PublishSubscribeChannel taskServiceChannel;
     private final EventHandler eventHandler;
+    private final PnaApi pnaApi;
+
 
     @Autowired
-    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler) {
+    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi) {
         this.taskRepository = taskRepository;
         this.taskSchedulingRepository = taskSchedulingRepository;
         this.taskStatusLogRepository = taskStatusLogRepository;
         this.taskServiceChannel = taskServiceChannel;
         this.eventHandler = eventHandler;
+        this.pnaApi = pnaApi;
     }
 
     public Task createTask(Task task) throws InterruptedException {
@@ -76,10 +83,14 @@ public class TaskService {
         // TODO: broadcast to listener of task, e.g., via MQTT
         Task savedTask = this.taskRepository.save(task);
         this.taskServiceChannel.send(new GenericMessage<>(task));
-/*        this.eventHandler.handleEvent(PulceoEvent.builder()
+        /*
+        this.eventHandler.handleEvent(PulceoEvent.builder()
                 .eventType(EventType.APP)
                 .payload("test")
-                .build());*/
+                .build());
+        */
+
+        // TODO: In case of status changes, schedule task directly
 
         return savedTask;
     }
@@ -91,7 +102,7 @@ public class TaskService {
 
     /* Task Scheduling */
     @Transactional
-    public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) {
+    public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) throws TaskServiceException {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
         TaskScheduling taskScheduling = task.getTaskScheduling();
 
@@ -113,8 +124,31 @@ public class TaskService {
         taskScheduling.addTaskStatusLog(taskStatusLog);
         taskScheduling.addTask(task);
 
+        // on status change via update
+        try {
+            schedule(taskScheduling);
+        } catch (PnaApiException e) {
+            throw new TaskServiceException("Task could not be scheduled", e);
+        }
+
         // persist and return
         return this.taskSchedulingRepository.save(taskScheduling);
+    }
+
+    private void schedule(TaskScheduling taskScheduling) throws PnaApiException {
+
+        /*
+        private String nodeId = ""; // global node id where the task is scheduled
+        private String applicationId = ""; // global application id
+        private String applicationComponentId = ""; // global application component id
+        private TaskStatus status = TaskStatus.NEW; // task status
+        private Task task; // task
+        private List<TaskStatusLog> statusLogs; // task status logs
+        */
+
+
+        this.pnaApi.createNewTaskOnPna("", CreateNewTaskOnPnaDTO.builder().build());
+
     }
 
     /* TaskStatusLogs */
