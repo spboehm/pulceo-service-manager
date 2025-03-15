@@ -1,6 +1,7 @@
 package dev.pulceo.prm.dto.node;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
@@ -9,7 +10,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @ToString
-public class NodeDTO  {
+@SuperBuilder
+public class NodeDTO {
 
     private UUID uuid;
     private String providerName;

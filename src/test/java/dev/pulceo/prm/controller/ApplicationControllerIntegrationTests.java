@@ -42,7 +42,7 @@ public class ApplicationControllerIntegrationTests {
 
     @BeforeEach
     public void setUp() throws InterruptedException {
-        Thread.sleep(100);
+        Thread.sleep(1000);
         this.applicationRepository.deleteAll();
     }
 

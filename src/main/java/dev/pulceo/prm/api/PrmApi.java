@@ -35,6 +35,9 @@ public class PrmApi {
             return nodeCache.get(id);
         } else {
             NodeDTO node = requestNodeFromPRM(id);
+            if (node == null) {
+                throw new PrmApiException("Failed to get node from PRM");
+            }
             this.nodeCache.put(id, node);
             this.nodeCache.put(node.getNode().getName(), node);
             return node;
@@ -64,7 +67,7 @@ public class PrmApi {
     private NodeDTO requestNodeFromPRM(String id) {
         return webClient
                 .get()
-                .uri(this.webClientScheme + "://" + prmEndpoint + PRM_NODES_API_BASE_PATH + "/" + id)
+                .uri(this.prmEndpoint + PRM_NODES_API_BASE_PATH + "/" + id)
                 .retrieve()
                 .bodyToMono(NodeDTO.class)
                 .onErrorResume(e -> {
