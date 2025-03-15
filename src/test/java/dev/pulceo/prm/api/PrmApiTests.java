@@ -59,4 +59,26 @@ public class PrmApiTests {
         wireMockServer.verify(getRequestedFor(urlEqualTo("/api/v1/nodes/" + nodeId + "/pna-token")));
     }
 
+    @Test
+    public void testGetPnaTokenFromCache() throws PrmApiException {
+        // given
+        String nodeId = "0b1c6697-cb29-4377-bcf8-9fd61ac6c0f3";
+        String expectedPnaToken = "b0hRUGwxT0hNYnhGbGoyQ2tlQnBGblAxOmdHUHM3MGtRRWNsZVFMSmdZclFhVUExb0VpNktGZ296";
+        wireMockServer.stubFor(get(urlEqualTo("/api/v1/nodes/" + nodeId + "/pna-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(expectedPnaToken)));
+        prmApi.getPnaTokenByNodeId(nodeId);
+        wireMockServer.resetRequests();
+
+        // when
+        String pnaTokenCached = prmApi.getPnaTokenByNodeId(nodeId);
+
+        // then
+        assertEquals(expectedPnaToken, pnaTokenCached);
+        wireMockServer.verify(0, getRequestedFor(urlEqualTo("/api/v1/nodes/" + nodeId + "/pna-token")));
+    }
+
+
 }
