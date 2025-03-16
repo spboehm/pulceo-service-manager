@@ -29,8 +29,6 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // TODO: Get task by id
-
     // TODO: Get task list by id
 
     @PostMapping
@@ -43,13 +41,20 @@ public class TaskController {
     public ResponseEntity<TaskDTO> readTaskById(@PathVariable UUID id) {
         Optional<Task> task = this.taskService.readTaskByUUID(id);
 
-        System.out.println(task.toString());
-
-
         if (task.isEmpty()) {
             return ResponseEntity.status(404).build();
         }
         return ResponseEntity.status(200).body(TaskDTO.fromTask(task.get()));
+    }
+
+    @GetMapping("")
+    public ResponseEntity<List<TaskDTO>> readAllTasks() {
+        List<Task> tasks = this.taskService.readAllTasks();
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+        for (Task task : tasks) {
+            taskDTOs.add(TaskDTO.fromTask(task));
+        }
+        return ResponseEntity.status(200).body(taskDTOs);
     }
 
     /* scheduling */

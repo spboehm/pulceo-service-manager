@@ -102,6 +102,13 @@ public class TaskService {
         return this.taskRepository.findByUuid((taskUUID));
     }
 
+    public List<Task> readAllTasks() {
+        List<Task> tasks = new ArrayList<>();
+        Iterable<Task> taskList = this.taskRepository.findAll();
+        taskList.forEach(task -> tasks.add(task));
+        return tasks;
+    }
+
     /* Task Scheduling */
     @Transactional
     public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) throws TaskServiceException {
