@@ -5,6 +5,7 @@ import dev.pulceo.prm.dto.task.TaskSchedulingDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,13 @@ import java.util.Objects;
 public class TaskScheduling extends BaseEntity {
 
     @Builder.Default
+    private String remoteTaskUUID = ""; // remote task uuid on deviss
+    @Builder.Default
     private String nodeId = ""; // global node id where the task is scheduled
+    @NotNull(message = "Remote node id is required!")
+    @Builder.Default
+    private String remoteNodeUUID = "";
+    @NotNull(message = "PNA id is required!")
     @Builder.Default
     private String applicationId = ""; // global application id
     @Builder.Default

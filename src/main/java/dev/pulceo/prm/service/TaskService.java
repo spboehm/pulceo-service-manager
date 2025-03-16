@@ -2,10 +2,12 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaDTO;
+import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaResponseDTO;
 import dev.pulceo.prm.api.exception.PnaApiException;
 import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
+import dev.pulceo.prm.model.task.TaskStatus;
 import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.repository.TaskRepository;
 import dev.pulceo.prm.repository.TaskSchedulingRepository;
@@ -116,7 +118,7 @@ public class TaskService {
                 .task(task)
                 .build();
 
-        // update task scheduling
+        // update task scheduling, remove if UpdateTaskDTO is ready
         taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
         taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
         taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
@@ -124,31 +126,41 @@ public class TaskService {
         taskScheduling.addTaskStatusLog(taskStatusLog);
         taskScheduling.addTask(task);
 
-        // on status change via update
+        // on status change
         try {
-            schedule(taskScheduling);
+            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = schedule(taskScheduling);
+            taskScheduling.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
+            taskScheduling.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
+            taskScheduling.setStatus(createNewTaskOnPnaResponseDTO.getStatus());
+            // TODO: do we need this here?
+            //taskScheduling.addTaskStatusLog(taskStatusLog);
+            // persist and return
+            return this.taskSchedulingRepository.save(taskScheduling);
         } catch (PnaApiException e) {
-            throw new TaskServiceException("Task could not be scheduled", e);
+            throw new TaskServiceException("Could note schedule task!", e);
         }
-
-        // persist and return
-        return this.taskSchedulingRepository.save(taskScheduling);
     }
 
-    private void schedule(TaskScheduling taskScheduling) throws PnaApiException {
+    private CreateNewTaskOnPnaResponseDTO schedule(TaskScheduling taskScheduling) throws PnaApiException {
 
-        /*
-        private String nodeId = ""; // global node id where the task is scheduled
-        private String applicationId = ""; // global application id
-        private String applicationComponentId = ""; // global application component id
-        private TaskStatus status = TaskStatus.NEW; // task status
-        private Task task; // task
-        private List<TaskStatusLog> statusLogs; // task status logs
-        */
+        // case SCHEDULED or OFFLOADED
+        if (taskScheduling.getStatus() == TaskStatus.SCHEDULED) {
+            CreateNewTaskOnPnaDTO createNewTaskOnPna = CreateNewTaskOnPnaDTO.builder()
+                    .applicationId(taskScheduling.getApplicationId())
+                    .applicationComponentId(taskScheduling.getApplicationComponentId())
+                    .payload(taskScheduling.getTask().getPayload())
+                    .callbackProtocol(taskScheduling.getTask().getTaskMetaData().getCallbackProtocol())
+                    .callbackEndpoint(taskScheduling.getTask().getTaskMetaData().getCallbackEndpoint())
+                    .destinationApplicationComponentProtocol(taskScheduling.getTask().getTaskMetaData().getDestinationApplicationComponentProtocol())
+                    .destinationApplicationComponentEndpoint(taskScheduling.getTask().getTaskMetaData().getDestinationApplicationComponentEndpoint())
+                    .properties(taskScheduling.getTask().getProperties())
+                    .build();
 
-
-        this.pnaApi.createNewTaskOnPna("", CreateNewTaskOnPnaDTO.builder().build());
-
+            return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
+        } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
+            logger.warn("Update after offloading not implemented yet");
+        } // TODO: further cases
+        return CreateNewTaskOnPnaResponseDTO.builder().build();
     }
 
     /* TaskStatusLogs */

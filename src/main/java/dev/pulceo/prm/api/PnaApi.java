@@ -3,6 +3,8 @@ package dev.pulceo.prm.api;
 import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaDTO;
 import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaResponseDTO;
 import dev.pulceo.prm.api.exception.PnaApiException;
+import dev.pulceo.prm.api.exception.PrmApiException;
+import dev.pulceo.prm.dto.node.NodeDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,6 @@ public class PnaApi {
     private final static String PNA_TASKS_API_BASE_PATH = "/api/v1/tasks";
     @Value("${webclient.scheme}")
     private String webClientScheme;
-
     private final PrmApi prmApi;
 
     @Autowired
@@ -33,34 +34,23 @@ public class PnaApi {
         this.prmApi = prmApi;
     }
 
-    public void createNewTaskOnPna(String id, CreateNewTaskOnPnaDTO createNewTaskOnPnaDTO) throws PnaApiException {
-        logger.info("Creating new task on PNA");
-
-        // TODO: resolve node id
-
-        // TODO: String nodeId
-
-        // TODO: resolve node id
-        String pnaNodeAgentUrl = "127.0.0.1:7676";
-
+    public CreateNewTaskOnPnaResponseDTO createNewTaskOnPna(String id, CreateNewTaskOnPnaDTO createNewTaskOnPnaDTO) throws PnaApiException {
+        logger.info("Creating new task on PNA {}", id);
         try {
-
-            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = webClient
+            NodeDTO node = this.prmApi.getNodeById(id);
+            return webClient
                     .post()
-                    .uri(this.webClientScheme + "://" + pnaNodeAgentUrl + PNA_TASKS_API_BASE_PATH)
+                    .uri(this.webClientScheme + "://" + node.getHostname() + ":7676" + PNA_TASKS_API_BASE_PATH)
                     .header("Authorization", "Basic " + prmApi.getPnaTokenByNodeId(id))
                     .bodyValue(createNewTaskOnPnaDTO)
                     .retrieve()
                     .bodyToMono(CreateNewTaskOnPnaResponseDTO.class)
                     .onErrorResume(e -> {
-                        throw new RuntimeException(new PnaApiException("Failed to to issue a cloud registration", e));
+                        throw new RuntimeException(new PnaApiException("Failed to assign task to node", e));
                     })
                     .block();
-
-            System.out.println(createNewTaskOnPnaResponseDTO.toString());
-
-        } catch (Exception e) {
-            throw new PnaApiException("Failed to get PNA URL from PRM", e);
+        } catch (PrmApiException e) {
+            throw new PnaApiException("Failed to get node from PRM", e);
         }
     }
 }
