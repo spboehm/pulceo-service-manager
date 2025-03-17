@@ -1,9 +1,14 @@
 package dev.pulceo.prm.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaDTO;
 import dev.pulceo.prm.api.dto.task.CreateNewTaskOnPnaResponseDTO;
 import dev.pulceo.prm.api.exception.PnaApiException;
+import dev.pulceo.prm.dto.message.Operation;
+import dev.pulceo.prm.dto.message.ResourceMessage;
+import dev.pulceo.prm.dto.task.UpdateTaskFromPNADTO;
 import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
@@ -12,40 +17,51 @@ import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.repository.TaskRepository;
 import dev.pulceo.prm.repository.TaskSchedulingRepository;
 import dev.pulceo.prm.repository.TaskStatusLogRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class TaskService {
 
     private final Logger logger = LoggerFactory.getLogger(TaskService.class);
 
+    private final BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna;
+    private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
     private final TaskRepository taskRepository;
     private final TaskSchedulingRepository taskSchedulingRepository;
     private final TaskStatusLogRepository taskStatusLogRepository;
     private final PublishSubscribeChannel taskServiceChannel;
     private final EventHandler eventHandler;
+    private final AtomicBoolean isRunning = new AtomicBoolean(true);
     private final PnaApi pnaApi;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     @Autowired
-    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi) {
+    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi, ThreadPoolTaskExecutor threadPoolTaskExecutor, BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna) {
         this.taskRepository = taskRepository;
         this.taskSchedulingRepository = taskSchedulingRepository;
         this.taskStatusLogRepository = taskStatusLogRepository;
         this.taskServiceChannel = taskServiceChannel;
         this.eventHandler = eventHandler;
         this.pnaApi = pnaApi;
+        this.threadPoolTaskExecutor = threadPoolTaskExecutor;
+        this.mqttBlockingQueueTasksFromPna = mqttBlockingQueueTasksFromPna;
     }
 
     public Task createTask(Task task) throws InterruptedException {
@@ -82,7 +98,7 @@ public class TaskService {
 
         // TODO: broadcast to listener of task, e.g., via MQTT
         Task savedTask = this.taskRepository.save(task);
-        // broadcast to user, mqtt endpoint "tasks/"
+        // broadcast to user, mqtt endpoint "tasks/", todo implement this for the general case
         this.taskServiceChannel.send(new GenericMessage<>(task, new MessageHeaders(Map.of("mqtt_topic", "tasks/"))));
         /*
         this.eventHandler.handleEvent(PulceoEvent.builder()
@@ -135,12 +151,14 @@ public class TaskService {
         // on status change
         try {
             CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = schedule(taskScheduling);
+            task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
             taskScheduling.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
             taskScheduling.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
             taskScheduling.setStatus(createNewTaskOnPnaResponseDTO.getStatus());
             // TODO: do we need this here?
             //taskScheduling.addTaskStatusLog(taskStatusLog);
             // persist and return
+            this.taskRepository.save(task); // because of remoteUUIDassignment
             return this.taskSchedulingRepository.save(taskScheduling);
         } catch (PnaApiException e) {
             throw new TaskServiceException("Could note schedule task!", e);
@@ -161,6 +179,8 @@ public class TaskService {
                     .properties(taskScheduling.getTask().getProperties())
                     .build();
 
+            // TODO: issue event to the "tasks/" endpoint
+
             return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
         } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
             logger.warn("Update after offloading not implemented yet");
@@ -177,6 +197,60 @@ public class TaskService {
         return taskStatusLogs;
     }
 
+    private void updateTaskFromPna(UpdateTaskFromPNADTO updateTaskFromPNADTO) {
+
+        // TODO: get task
+        Optional<Task> taskOptional = this.taskRepository.findByRemoteTaskUUID(updateTaskFromPNADTO.getRemoteTaskUUID());
+        if (taskOptional.isEmpty()) {
+            logger.warn("Task not found");
+            return;
+        }
+        Task task = taskOptional.get();
+        System.out.println(task);
+
+        // TODO: update newTaskStatus
+
+        // TODO: reflect modified by
+
+        // TODO: reflect modified on
+
+
+    }
     // TODO: mqtt listener for task status changes, issued by PNA, using mqtt with topic "cmd/pulceo/tasks"
-    
+
+    // TODO: stop svc
+
+    @PostConstruct
+    public void init() {
+        threadPoolTaskExecutor.execute(() -> {
+            logger.info("Initializing Task Service...waiting for messages via mqtt");
+            while (isRunning.get()) {
+                try {
+                    Message<?> message = mqttBlockingQueueTasksFromPna.take();
+                    logger.info("TaskService received message: " + message.getPayload());
+                    String payload = (String) message.getPayload();
+                    ResourceMessage resourceMessage = objectMapper.readValue(payload, ResourceMessage.class);
+
+                    // decide on the message type
+                    switch (resourceMessage.getResourceType()) {
+                        case TASK:
+                            if (resourceMessage.getOperation() == Operation.UPDATE) {
+                                logger.info("Update received from %s".formatted(resourceMessage.getSentBydeviceId()));
+                                UpdateTaskFromPNADTO updateTaskFromPNADTO = objectMapper.readValue(resourceMessage.getPayload(), UpdateTaskFromPNADTO.class);
+                                this.updateTaskFromPna(updateTaskFromPNADTO);
+                            } else {
+                                logger.warn("Unsupported operation for resource type TASK");
+                            }
+                        default:
+                            logger.warn("Unsupported resource type");
+                            throw new RuntimeException("Unsupported resource type");
+                    }
+                } catch (InterruptedException | JsonProcessingException e) {
+                    logger.info("Initiate shutdown of TaskService...");
+                    this.isRunning.set(false);
+                }
+            }
+        });
+    }
+
 }

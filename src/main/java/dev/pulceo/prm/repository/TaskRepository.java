@@ -14,4 +14,6 @@ public interface TaskRepository extends CrudRepository<Task, Long> {
     //@Cacheable(value = "task", key = "#uuid")
     Optional<Task> findByUuid(UUID uuid);
 
+    Optional<Task> findByRemoteTaskUUID(String remoteTaskUUID);
+
 }
