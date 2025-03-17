@@ -17,15 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class TaskService {
@@ -84,7 +82,8 @@ public class TaskService {
 
         // TODO: broadcast to listener of task, e.g., via MQTT
         Task savedTask = this.taskRepository.save(task);
-        this.taskServiceChannel.send(new GenericMessage<>(task));
+        // broadcast to user, mqtt endpoint "tasks/"
+        this.taskServiceChannel.send(new GenericMessage<>(task, new MessageHeaders(Map.of("mqtt_topic", "tasks/"))));
         /*
         this.eventHandler.handleEvent(PulceoEvent.builder()
                 .eventType(EventType.APP)
@@ -149,7 +148,6 @@ public class TaskService {
     }
 
     private CreateNewTaskOnPnaResponseDTO schedule(TaskScheduling taskScheduling) throws PnaApiException {
-
         // case SCHEDULED or OFFLOADED
         if (taskScheduling.getStatus() == TaskStatus.SCHEDULED) {
             CreateNewTaskOnPnaDTO createNewTaskOnPna = CreateNewTaskOnPnaDTO.builder()
@@ -178,4 +176,7 @@ public class TaskService {
         }
         return taskStatusLogs;
     }
+
+    // TODO: mqtt listener for task status changes, issued by PNA, using mqtt with topic "cmd/pulceo/tasks"
+    
 }

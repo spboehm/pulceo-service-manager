@@ -52,6 +52,7 @@ public class MQTTConfig {
         MqttPahoMessageHandler messageHandler =
                 new MqttPahoMessageHandler(UUID.randomUUID().toString(), mqttClientFactory());
         messageHandler.setAsync(true);
+        // internal communication
         messageHandler.setDefaultTopic("dt/pulceo/events");
         messageHandler.setConverter(new DefaultPahoMessageConverter());
         return messageHandler;
@@ -69,7 +70,8 @@ public class MQTTConfig {
         MqttPahoMessageHandler messageHandler =
                 new MqttPahoMessageHandler(UUID.randomUUID().toString(), mqttClientFactory());
         messageHandler.setAsync(true);
-        messageHandler.setDefaultTopic("dt/pulceo/tasks");
+        // sunk endpoint, there is no need to set a topic
+        messageHandler.setDefaultTopic("tasks/");
         messageHandler.setConverter(new DefaultPahoMessageConverter());
         return messageHandler;
     }
