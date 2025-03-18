@@ -97,6 +97,7 @@ public class TaskService {
         // put to sql db
 
         // TODO: broadcast to listener of task, e.g., via MQTT
+        // TODO: broadcast to user, mqtt endpoint "tasks/", todo implement this for the general case
         Task savedTask = this.taskRepository.save(task);
         // broadcast to user, mqtt endpoint "tasks/", todo implement this for the general case
         this.taskServiceChannel.send(new GenericMessage<>(task, new MessageHeaders(Map.of("mqtt_topic", "tasks/"))));
@@ -129,6 +130,11 @@ public class TaskService {
     public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) throws TaskServiceException {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
         TaskScheduling taskScheduling = task.getTaskScheduling();
+
+        // TODO: if no status change, return;
+        if (taskScheduling.getStatus() == updatedTaskScheduling.getStatus()) {
+            return taskScheduling;
+        }
 
         // add to TaskStatusLog history of TaskScheduling
         TaskStatusLog taskStatusLog = TaskStatusLog.builder()
@@ -180,7 +186,6 @@ public class TaskService {
                     .build();
 
             // TODO: issue event to the "tasks/" endpoint
-
             return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
         } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
             logger.warn("Update after offloading not implemented yet");
@@ -197,9 +202,7 @@ public class TaskService {
         return taskStatusLogs;
     }
 
-
     private void updateTaskFromPna(UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
-
         // TODO: get task
         // TODO: TaskScheduling would be sufficient?
         Optional<Task> taskOptional = this.taskRepository.findByRemoteTaskUUID(updateTaskFromPNADTO.getRemoteTaskUUID());
@@ -236,7 +239,6 @@ public class TaskService {
         // TODO: add TaskStatusLog to TaskScheduling
         taskSchedulingToBeUpdated.addTaskStatusLog(taskStatusLog);
         // TODO: broadcast to users
-
         // persis TaskScheduling
         // this.taskSchedulingRepository.save(taskSchedulingToBeUpdated);
     }
@@ -271,7 +273,7 @@ public class TaskService {
                             logger.warn("Unsupported resource type");
                     }
                 } catch (TaskServiceException e) {
-                    logger.error(e.getMessage());
+                    logger.warn(e.getMessage());
                 } catch (JsonProcessingException e) {
                     logger.warn("Couldn't parse payload...continue", e);
                 } catch (InterruptedException e) {
