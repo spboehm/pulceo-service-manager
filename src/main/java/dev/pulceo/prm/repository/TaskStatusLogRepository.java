@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface TaskStatusLogRepository extends CrudRepository<TaskStatusLog, Long> {
 
-
     List<TaskStatusLog> findTaskStatusLogsByTaskId(Long id);
 }

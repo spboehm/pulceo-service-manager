@@ -21,6 +21,11 @@ import java.util.Objects;
 @Setter
 @SuperBuilder
 @NoArgsConstructor
+@NamedEntityGraph(
+        name = "graph.TaskScheduling.statusLogs",
+        attributeNodes = {
+                @NamedAttributeNode(value = "statusLogs")
+        })
 public class TaskScheduling extends BaseEntity {
 
     @Builder.Default

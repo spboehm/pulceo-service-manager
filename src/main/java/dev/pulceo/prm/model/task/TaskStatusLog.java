@@ -27,9 +27,12 @@ public class TaskStatusLog extends BaseEntity {
     @Builder.Default
     private Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
-    private TaskStatus previousStatus = TaskStatus.NEW;
+    // TODO: does this really make sense?
+    private TaskStatus previousStatus = TaskStatus.NONE;
     @Builder.Default
     private TaskStatus newStatus = TaskStatus.NEW;
+    @Builder.Default
+    private Timestamp modifiedOn = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
     private String modifiedBy = "psm";
     @Builder.Default

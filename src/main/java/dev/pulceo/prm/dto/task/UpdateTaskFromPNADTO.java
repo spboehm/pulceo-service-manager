@@ -18,7 +18,7 @@ public class UpdateTaskFromPNADTO {
 
     private String remoteTaskUUID;
     private TaskStatus newTaskStatus;
-    private String modifiedBy; // remoteNodeUUID
+    private String modifiedByRemoteNodeUUID; // always the pna remote node uuid
     private Timestamp modifiedOn; // timestamp where task is modified on device
 
 }

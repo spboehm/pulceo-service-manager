@@ -151,7 +151,7 @@ public class TaskService {
         // on status change
         try {
             CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = schedule(taskScheduling);
-            task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
+            task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
             taskScheduling.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
             taskScheduling.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
             taskScheduling.setStatus(createNewTaskOnPnaResponseDTO.getStatus());
@@ -197,24 +197,48 @@ public class TaskService {
         return taskStatusLogs;
     }
 
-    private void updateTaskFromPna(UpdateTaskFromPNADTO updateTaskFromPNADTO) {
+
+    private void updateTaskFromPna(UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
 
         // TODO: get task
+        // TODO: TaskScheduling would be sufficient?
         Optional<Task> taskOptional = this.taskRepository.findByRemoteTaskUUID(updateTaskFromPNADTO.getRemoteTaskUUID());
         if (taskOptional.isEmpty()) {
             logger.warn("Task not found");
             return;
         }
-        Task task = taskOptional.get();
-        System.out.println(task);
+        Task taskToBeUpdated = taskOptional.get();
 
-        // TODO: update newTaskStatus
+        // retrieve task scheduling
+        Optional<TaskScheduling> taskScheduling = this.taskSchedulingRepository.findWithStatusLogsByUuid(taskToBeUpdated.getTaskScheduling().getUuid());
 
-        // TODO: reflect modified by
+        if (taskScheduling.isEmpty()) {
+            logger.warn("Task not found");
+            // TODO: abort
+            throw new TaskServiceException("Associated TaskScheduling not found");
+        }
 
-        // TODO: reflect modified on
+        TaskScheduling taskSchedulingToBeUpdated = taskScheduling.get();
+        taskSchedulingToBeUpdated.setStatus(updateTaskFromPNADTO.getNewTaskStatus());
+        // create new TaskStatusLog
+        // TODO: reflect modified by String modifiedBy
+        // TODO: reflect modified on Timestamp modifiedOn
+        // TODO: update newTaskStatus in TaskScheduling
+        TaskStatusLog taskStatusLog = TaskStatusLog.builder()
+                .previousStatus(taskSchedulingToBeUpdated.getStatus())
+                .newStatus(updateTaskFromPNADTO.getNewTaskStatus())
+                .modifiedBy(updateTaskFromPNADTO.getModifiedByRemoteNodeUUID())
+                .modifiedOn(updateTaskFromPNADTO.getModifiedOn())
+                .task(taskToBeUpdated)
+                .taskScheduling(taskSchedulingToBeUpdated)
+                .build();
 
+        // TODO: add TaskStatusLog to TaskScheduling
+        taskSchedulingToBeUpdated.addTaskStatusLog(taskStatusLog);
+        // TODO: broadcast to users
 
+        // persis TaskScheduling
+        // this.taskSchedulingRepository.save(taskSchedulingToBeUpdated);
     }
     // TODO: mqtt listener for task status changes, issued by PNA, using mqtt with topic "cmd/pulceo/tasks"
 
@@ -223,9 +247,10 @@ public class TaskService {
     @PostConstruct
     public void init() {
         threadPoolTaskExecutor.execute(() -> {
-            logger.info("Initializing Task Service...waiting for messages via mqtt");
+            logger.info("Initializing Task Service...");
             while (isRunning.get()) {
                 try {
+                    logger.info("Task service is waiting for messages...");
                     Message<?> message = mqttBlockingQueueTasksFromPna.take();
                     logger.info("TaskService received message: " + message.getPayload());
                     String payload = (String) message.getPayload();
@@ -241,11 +266,15 @@ public class TaskService {
                             } else {
                                 logger.warn("Unsupported operation for resource type TASK");
                             }
+                            break;
                         default:
                             logger.warn("Unsupported resource type");
-                            throw new RuntimeException("Unsupported resource type");
                     }
-                } catch (InterruptedException | JsonProcessingException e) {
+                } catch (TaskServiceException e) {
+                    logger.error(e.getMessage());
+                } catch (JsonProcessingException e) {
+                    logger.warn("Couldn't parse payload...continue", e);
+                } catch (InterruptedException e) {
                     logger.info("Initiate shutdown of TaskService...");
                     this.isRunning.set(false);
                 }
