@@ -134,12 +134,15 @@ public class TaskService {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
         TaskScheduling taskScheduling = task.getTaskScheduling();
 
-        // TODO: if no status change, return;
+        // TODO: if no status change, return, idempotency;
         if (taskScheduling.getStatus() == updatedTaskScheduling.getStatus()) {
             return taskScheduling;
         }
 
         // TODO: implement NEW->SCHEDULED
+        if (taskScheduling.getStatus() == TaskStatus.NEW && updatedTaskScheduling.getStatus() == TaskStatus.SCHEDULED) {
+            scheduleTask(taskScheduling, updatedTaskScheduling);
+        }
 
         // TODO: After NEW->SCHEDULED, implement SCHEDULED->OFFLOADED in a asynchronous operation
 
@@ -169,7 +172,7 @@ public class TaskService {
             taskScheduling.addTaskStatusLog(taskStatusLog);
             taskScheduling.addTask(task);
 
-            // remore information
+            // remote information
             taskScheduling.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
             taskScheduling.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
 
@@ -184,6 +187,24 @@ public class TaskService {
         } catch (PnaApiException e) {
             throw new TaskServiceException("Could note schedule task!", e);
         }
+    }
+
+    private void scheduleTask(TaskScheduling taskScheduling, TaskScheduling updatedTaskScheduling) throws TaskServiceException {
+
+
+        // TODO: put to taskSchedulingQueue
+        this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
+    }
+
+    private void offloadScheduledTasks() {
+        // TODO: retrieve vom BlockingQueue
+
+        // TODO: query from DB
+
+        // TODO: Offload to corresponding PNA
+
+        // TODO: Persist changes to DB, that task is offloaded
+
     }
 
     private CreateNewTaskOnPnaResponseDTO offload(TaskScheduling taskScheduling) throws PnaApiException {
