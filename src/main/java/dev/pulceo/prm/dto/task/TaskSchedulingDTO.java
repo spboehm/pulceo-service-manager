@@ -19,17 +19,14 @@ public class TaskSchedulingDTO {
     @Builder.Default
     private String applicationComponentId = ""; // global application component id
     @Builder.Default
-    private TaskStatus statusOnPSM = TaskStatus.NONE; // task status
-    @Builder.Default
-    private TaskStatus statusOnPNA = TaskStatus.NONE; // task status
+    private TaskStatus status = TaskStatus.NONE; // task status
 
     public static TaskSchedulingDTO from(TaskScheduling taskScheduling) {
         return TaskSchedulingDTO.builder()
                 .nodeId(taskScheduling.getNodeId())
                 .applicationId(taskScheduling.getApplicationId())
                 .applicationComponentId(taskScheduling.getApplicationComponentId())
-                .statusOnPSM(taskScheduling.getStatus())
-                .statusOnPNA(taskScheduling.getStatus())
+                .status(taskScheduling.getStatus())
                 .build();
     }
 

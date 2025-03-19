@@ -64,7 +64,7 @@ public class TaskScheduling extends BaseEntity {
                 .nodeId(taskSchedulingDTO.getNodeId())
                 .applicationId(taskSchedulingDTO.getApplicationId())
                 .applicationComponentId(taskSchedulingDTO.getApplicationComponentId())
-                .status(taskSchedulingDTO.getStatusOnPSM())
+                .status(taskSchedulingDTO.getStatus())
                 .build();
     }
 

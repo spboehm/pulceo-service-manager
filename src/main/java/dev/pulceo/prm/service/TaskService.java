@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,6 +51,8 @@ public class TaskService {
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
     private final PnaApi pnaApi;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    // TODO: Bean-based access and configuration
+    private final BlockingQueue<String> taskSchedulingQueue = new ArrayBlockingQueue<>(1000);
 
 
     @Autowired
@@ -136,31 +139,43 @@ public class TaskService {
             return taskScheduling;
         }
 
-        // add to TaskStatusLog history of TaskScheduling
-        TaskStatusLog taskStatusLog = TaskStatusLog.builder()
-                .previousStatus(taskScheduling.getStatus())
-                .newStatus(updatedTaskScheduling.getStatus())
-                .previousStateOfTask(taskScheduling.toString())
-                .newStateOfTask(updatedTaskScheduling.toString())
-                .taskScheduling(taskScheduling)
-                .task(task)
-                .build();
+        // TODO: implement NEW->SCHEDULED
 
-        // update task scheduling, remove if UpdateTaskDTO is ready
-        taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
-        taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
-        taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
-        taskScheduling.setStatus(updatedTaskScheduling.getStatus());
-        taskScheduling.addTaskStatusLog(taskStatusLog);
-        taskScheduling.addTask(task);
+        // TODO: After NEW->SCHEDULED, implement SCHEDULED->OFFLOADED in a asynchronous operation
 
         // on status change
         try {
-            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = schedule(taskScheduling);
+            /* case NEW->SCHEDULED */
+            // this means an ALG has assigned the task to a node, but the platform has not yet scheduled (offloaded) the task
+            logger.info("Scheduling task with status %s".formatted(taskScheduling.getStatus()));
+            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offload(taskScheduling);
             task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
+
+            // add to TaskStatusLog history of TaskScheduling, executed if operation on remote device has success
+            TaskStatusLog taskStatusLog = TaskStatusLog.builder()
+                    .previousStatus(taskScheduling.getStatus())
+                    .newStatus(updatedTaskScheduling.getStatus())
+                    .previousStateOfTask(taskScheduling.toString())
+                    .newStateOfTask(updatedTaskScheduling.toString())
+                    .taskScheduling(taskScheduling)
+                    .task(task)
+                    .build();
+
+            // update task scheduling, remove if UpdateTaskDTO is ready
+            taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
+            taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
+            taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
+            taskScheduling.setStatus(updatedTaskScheduling.getStatus());
+            taskScheduling.addTaskStatusLog(taskStatusLog);
+            taskScheduling.addTask(task);
+
+            // remore information
             taskScheduling.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
             taskScheduling.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
-            taskScheduling.setStatus(createNewTaskOnPnaResponseDTO.getStatus());
+
+            // after successful scheduling, PNA will return task status new, but be we set to OFFLOADED,
+            // because we do not consider the local state, only the global statee
+            taskScheduling.setStatus(TaskStatus.SCHEDULED);
             // TODO: do we need this here?
             //taskScheduling.addTaskStatusLog(taskStatusLog);
             // persist and return
@@ -171,7 +186,7 @@ public class TaskService {
         }
     }
 
-    private CreateNewTaskOnPnaResponseDTO schedule(TaskScheduling taskScheduling) throws PnaApiException {
+    private CreateNewTaskOnPnaResponseDTO offload(TaskScheduling taskScheduling) throws PnaApiException {
         // case SCHEDULED or OFFLOADED
         if (taskScheduling.getStatus() == TaskStatus.SCHEDULED) {
             CreateNewTaskOnPnaDTO createNewTaskOnPna = CreateNewTaskOnPnaDTO.builder()
@@ -186,10 +201,12 @@ public class TaskService {
                     .build();
 
             // TODO: issue event to the "tasks/" endpoint
+            // note that this is an async operation, task will only be created on remote device, task changes are incoming
             return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
         } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
             logger.warn("Update after offloading not implemented yet");
         } // TODO: further cases
+        logger.warn("TaskScheduling status not supported");
         return CreateNewTaskOnPnaResponseDTO.builder().build();
     }
 
@@ -205,6 +222,7 @@ public class TaskService {
     private void updateTaskFromPna(UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
         // TODO: get task
         // TODO: TaskScheduling would be sufficient?
+        logger.info("Updating task from PNA with %s".formatted(updateTaskFromPNADTO.toString()));
         Optional<Task> taskOptional = this.taskRepository.findByRemoteTaskUUID(updateTaskFromPNADTO.getRemoteTaskUUID());
         if (taskOptional.isEmpty()) {
             logger.warn("Task not found");
@@ -264,6 +282,7 @@ public class TaskService {
                             if (resourceMessage.getOperation() == Operation.UPDATE) {
                                 logger.info("Update received from %s".formatted(resourceMessage.getSentBydeviceId()));
                                 UpdateTaskFromPNADTO updateTaskFromPNADTO = objectMapper.readValue(resourceMessage.getPayload(), UpdateTaskFromPNADTO.class);
+                                logger.info("Received update for task %s".formatted(updateTaskFromPNADTO.getRemoteTaskUUID()));
                                 this.updateTaskFromPna(updateTaskFromPNADTO);
                             } else {
                                 logger.warn("Unsupported operation for resource type TASK");
