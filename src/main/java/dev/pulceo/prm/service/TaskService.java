@@ -166,8 +166,6 @@ public class TaskService {
             // TODO: add log
             taskScheduling.addTask(task);
             taskScheduling.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, updatedTaskScheduling, task));
-            // TODO: remove
-            taskScheduling.addTaskStatusLog(this.logStatusChange(TaskStatus.SCHEDULED, oldTaskStatus, updatedTaskScheduling, task));
             this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
             return taskScheduling;
             /* case SCHEDULED->OFFLOADED */
@@ -248,7 +246,6 @@ public class TaskService {
             logger.info("TaskScheduling to be offloaded has payload %s".formatted(taskSchedulingToBeOffloaded.toString()));
             // TODO: Offload to corresponding PNA
             CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offloadToPNA(taskSchedulingToBeOffloaded.getTask().getUuid().toString(), taskSchedulingToBeOffloaded);
-            // TODO: Query task from DB
             // global task UUID already set
             taskSchedulingToBeOffloaded.setGlobalTaskUUID(createNewTaskOnPnaResponseDTO.getGlobalTaskUUID());
             taskSchedulingToBeOffloaded.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
@@ -257,7 +254,9 @@ public class TaskService {
             taskSchedulingToBeOffloaded.setStatus(TaskStatus.OFFLOADED);
             taskSchedulingToBeOffloaded.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, taskSchedulingToBeOffloaded, taskSchedulingToBeOffloaded.getTask()));
 
-            this.taskSchedulingRepository.save(taskSchedulingToBeOffloaded);
+            // Persis task scheduling logs
+            Optional<Task> taskOptional = this.taskRepository.findByUuid(taskSchedulingToBeOffloaded.getTask().getUuid());
+            this.taskStatusLogRepository.save(this.logStatusChange(TaskStatus.SCHEDULED, oldTaskStatus, taskSchedulingToBeOffloaded, taskOptional.get()));
             logger.info("Successfully offloaded task with id %s".formatted(taskSchedulingId));
         } else {
             logger.warn("Task with status %s cannot be offloaded because of status change".formatted(taskSchedulingToBeOffloaded.getStatus()));

@@ -41,10 +41,10 @@ public class TaskStatusLog extends BaseEntity {
     private String newStateOfTask = "";
     @Builder.Default
     private String comment = "";
-    @ManyToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @ManyToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE})
     @JoinColumn(name = "task_id")
     private Task task; // task
-    @ManyToOne(targetEntity = TaskScheduling.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @ManyToOne(targetEntity = TaskScheduling.class, cascade = {CascadeType.MERGE})
     @JoinColumn(name = "taskScheduling_id")
     private TaskScheduling taskScheduling;
 
