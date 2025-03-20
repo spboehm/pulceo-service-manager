@@ -10,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @NoArgsConstructor
 @SuperBuilder
+@ToString
 public class TaskSchedulingDTO {
 
     @Builder.Default

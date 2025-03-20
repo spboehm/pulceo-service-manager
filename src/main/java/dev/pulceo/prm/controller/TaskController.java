@@ -7,6 +7,8 @@ import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.service.TaskService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/tasks")
 public class TaskController {
+
+    private final Logger logger = LoggerFactory.getLogger(TaskController.class);
 
     private final TaskService taskService;
 
@@ -65,6 +69,7 @@ public class TaskController {
             return ResponseEntity.status(404).build();
         }
         try {
+            logger.info("Scheduling task with status %s".formatted(taskSchedulingDTO.toString()));
             TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(id, TaskScheduling.fromTaskSchedulingDTO(taskSchedulingDTO));
             return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
         } catch (TaskServiceException e) {

@@ -141,7 +141,16 @@ public class TaskService {
 
         // TODO: implement NEW->SCHEDULED
         if (taskScheduling.getStatus() == TaskStatus.NEW && updatedTaskScheduling.getStatus() == TaskStatus.SCHEDULED) {
-            scheduleTask(taskScheduling, updatedTaskScheduling);
+            this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
+            // only update properties from DTO, other information a filled async
+            // TODO: check if nodeId exists
+            taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
+            // TODO: check if applicationId exists
+            taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
+            // TODO: check if applicationComponentId exists
+            taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
+            taskScheduling.setStatus(TaskStatus.SCHEDULED);
+            return taskScheduling;
         }
 
         // TODO: After NEW->SCHEDULED, implement SCHEDULED->OFFLOADED in a asynchronous operation
@@ -189,11 +198,9 @@ public class TaskService {
         }
     }
 
+    // TOOD: remove?
     private void scheduleTask(TaskScheduling taskScheduling, TaskScheduling updatedTaskScheduling) throws TaskServiceException {
-
-
         // TODO: put to taskSchedulingQueue
-        this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
     }
 
     private void offloadScheduledTasks() {
