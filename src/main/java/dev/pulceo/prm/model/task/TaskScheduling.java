@@ -60,12 +60,12 @@ public class TaskScheduling extends BaseEntity {
     private String applicationComponentId = ""; // global application component id
     @Builder.Default
     private TaskStatus status = TaskStatus.NEW; // task status
-    @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE})
     @JoinColumn(name = "task_id")
     @JsonBackReference
     private Task task; // task
     @Builder.Default
-    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE})
     private List<TaskStatusLog> statusLogs = new ArrayList<>(); // task status logs
 
     public void addTask(Task task) {

@@ -166,6 +166,7 @@ public class TaskService {
             // TODO: add log
             taskScheduling.addTask(task);
             taskScheduling.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, updatedTaskScheduling, task));
+            this.taskSchedulingRepository.save(taskScheduling);
             this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
             return taskScheduling;
             /* case SCHEDULED->OFFLOADED */
@@ -252,8 +253,8 @@ public class TaskService {
             taskSchedulingToBeOffloaded.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
             // TODO: Persist changes to DB, that task is offloaded, maybe change to when task is really offloaded, asumption is offloaded
             taskSchedulingToBeOffloaded.setStatus(TaskStatus.OFFLOADED);
-            taskSchedulingToBeOffloaded.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, taskSchedulingToBeOffloaded, taskSchedulingToBeOffloaded.getTask()));
-
+//            taskSchedulingToBeOffloaded.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, taskSchedulingToBeOffloaded, taskSchedulingToBeOffloaded.getTask()));
+            this.taskSchedulingRepository.save(taskSchedulingToBeOffloaded);
             // Persis task scheduling logs
             Optional<Task> taskOptional = this.taskRepository.findByUuid(taskSchedulingToBeOffloaded.getTask().getUuid());
             this.taskStatusLogRepository.save(this.logStatusChange(TaskStatus.SCHEDULED, oldTaskStatus, taskSchedulingToBeOffloaded, taskOptional.get()));
@@ -298,45 +299,40 @@ public class TaskService {
     }
 
     private void updateTaskFromPna(UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
-        // TODO: get task
-        // TODO: TaskScheduling would be sufficient?
-        logger.info("Updating task from PNA with %s".formatted(updateTaskFromPNADTO.toString()));
-        Optional<Task> taskOptional = this.taskRepository.findByUuid(UUID.fromString(updateTaskFromPNADTO.getGlobalTaskUUID()));
-        if (taskOptional.isEmpty()) {
-            logger.warn("Task not found");
-            return;
+
+        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING) {
+            // TODO: get task
+            // TODO: TaskScheduling would be sufficient?
+            logger.info("Updating task from PNA with %s".formatted(updateTaskFromPNADTO.toString()));
+            Optional<Task> taskOptional = this.taskRepository.findByUuid(UUID.fromString(updateTaskFromPNADTO.getGlobalTaskUUID()));
+            if (taskOptional.isEmpty()) {
+                logger.warn("Task not found");
+                return;
+            }
+            Task task = taskOptional.get();
+
+            // retrieve task scheduling
+            Optional<TaskScheduling> taskScheduling = this.taskSchedulingRepository.findWithStatusLogsByUuid(task.getTaskScheduling().getUuid());
+            System.out.println(taskScheduling.get().getStatus());
+            if (taskScheduling.isEmpty()) {
+                logger.warn("Task not found");
+                // TODO: abort
+                throw new TaskServiceException("Associated TaskScheduling not found");
+            }
+            TaskStatus previousTaskStatus = taskScheduling.get().getStatus();
+
+            TaskScheduling taskSchedulingToBeUpdated = taskScheduling.get();
+            String stateOfTaskScheduling = taskSchedulingToBeUpdated.toString();
+            taskSchedulingToBeUpdated.setStatus(updateTaskFromPNADTO.getNewTaskStatus());
+            // create new TaskStatusLog
+            // TODO: reflect modified by String modifiedBy
+            // TODO: reflect modified on Timestamp modifiedOn
+            // TODO: update newTaskStatus in TaskScheduling
+            this.taskStatusLogRepository.save(this.logStatusChange(previousTaskStatus, stateOfTaskScheduling, taskSchedulingToBeUpdated, task));
+            // TODO: broadcast to users
         }
-        Task taskToBeUpdated = taskOptional.get();
 
-        // retrieve task scheduling
-        Optional<TaskScheduling> taskScheduling = this.taskSchedulingRepository.findWithStatusLogsByUuid(taskToBeUpdated.getTaskScheduling().getUuid());
 
-        if (taskScheduling.isEmpty()) {
-            logger.warn("Task not found");
-            // TODO: abort
-            throw new TaskServiceException("Associated TaskScheduling not found");
-        }
-
-        TaskScheduling taskSchedulingToBeUpdated = taskScheduling.get();
-        taskSchedulingToBeUpdated.setStatus(updateTaskFromPNADTO.getNewTaskStatus());
-        // create new TaskStatusLog
-        // TODO: reflect modified by String modifiedBy
-        // TODO: reflect modified on Timestamp modifiedOn
-        // TODO: update newTaskStatus in TaskScheduling
-        TaskStatusLog taskStatusLog = TaskStatusLog.builder()
-                .previousStatus(taskSchedulingToBeUpdated.getStatus())
-                .newStatus(updateTaskFromPNADTO.getNewTaskStatus())
-                .modifiedBy(updateTaskFromPNADTO.getModifiedByRemoteNodeUUID())
-                .modifiedOn(updateTaskFromPNADTO.getModifiedOn())
-                .task(taskToBeUpdated)
-                .taskScheduling(taskSchedulingToBeUpdated)
-                .build();
-
-        // TODO: add TaskStatusLog to TaskScheduling
-        taskSchedulingToBeUpdated.addTaskStatusLog(taskStatusLog);
-        // TODO: broadcast to users
-        // persis TaskScheduling
-        // this.taskSchedulingRepository.save(taskSchedulingToBeUpdated);
     }
     // TODO: mqtt listener for task status changes, issued by PNA, using mqtt with topic "cmd/pulceo/tasks"
 
