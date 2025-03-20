@@ -29,6 +29,8 @@ import java.util.Objects;
 public class TaskScheduling extends BaseEntity {
 
     @Builder.Default
+    private String globalTaskUUID = ""; // gloval UUID on device
+    @Builder.Default
     private String remoteTaskUUID = ""; // remote task uuid on deviss
     @Builder.Default
     private String nodeId = ""; // global node id where the task is scheduled

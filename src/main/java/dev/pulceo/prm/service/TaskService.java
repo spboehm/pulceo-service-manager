@@ -27,6 +27,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -52,11 +53,13 @@ public class TaskService {
     private final PnaApi pnaApi;
     private final ObjectMapper objectMapper = new ObjectMapper();
     // TODO: Bean-based access and configuration
+    // uuid of task scheduling
     private final BlockingQueue<String> taskSchedulingQueue = new ArrayBlockingQueue<>(1000);
+    private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
 
 
     @Autowired
-    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi, ThreadPoolTaskExecutor threadPoolTaskExecutor, BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna) {
+    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi, ThreadPoolTaskExecutor threadPoolTaskExecutor, BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna, ThreadPoolTaskScheduler threadPoolTaskScheduler) {
         this.taskRepository = taskRepository;
         this.taskSchedulingRepository = taskSchedulingRepository;
         this.taskStatusLogRepository = taskStatusLogRepository;
@@ -65,6 +68,7 @@ public class TaskService {
         this.pnaApi = pnaApi;
         this.threadPoolTaskExecutor = threadPoolTaskExecutor;
         this.mqttBlockingQueueTasksFromPna = mqttBlockingQueueTasksFromPna;
+        this.threadPoolTaskScheduler = threadPoolTaskScheduler;
     }
 
     public Task createTask(Task task) throws InterruptedException {
@@ -88,6 +92,7 @@ public class TaskService {
 
         // TODO: set task scheduling references
         TaskScheduling taskScheduling = TaskScheduling.builder().build();
+        taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
         taskScheduling.addTask(task);
         task.setTaskScheduling(taskScheduling);
 
@@ -141,15 +146,21 @@ public class TaskService {
 
         // TODO: implement NEW->SCHEDULED
         if (taskScheduling.getStatus() == TaskStatus.NEW && updatedTaskScheduling.getStatus() == TaskStatus.SCHEDULED) {
-            this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
             // only update properties from DTO, other information a filled async
+            // TODO: add global taskId
+            taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
             // TODO: check if nodeId exists
             taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
             // TODO: check if applicationId exists
             taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
             // TODO: check if applicationComponentId exists
             taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
+            // TODO: set new task status to scheduled
             taskScheduling.setStatus(TaskStatus.SCHEDULED);
+            // issue new task to be scheduled to background thread via blocking queue
+            // TODO: maybe add task id resolver
+            // TODO: add log
+            this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
             return taskScheduling;
         }
 
@@ -160,7 +171,7 @@ public class TaskService {
             /* case NEW->SCHEDULED */
             // this means an ALG has assigned the task to a node, but the platform has not yet scheduled (offloaded) the task
             logger.info("Scheduling task with status %s".formatted(taskScheduling.getStatus()));
-            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offload(taskScheduling);
+            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offload(task.getUuid().toString(), taskScheduling);
             task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
 
             // add to TaskStatusLog history of TaskScheduling, executed if operation on remote device has success
@@ -174,6 +185,7 @@ public class TaskService {
                     .build();
 
             // update task scheduling, remove if UpdateTaskDTO is ready
+            taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
             taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
             taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
             taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
@@ -203,21 +215,45 @@ public class TaskService {
         // TODO: put to taskSchedulingQueue
     }
 
-    private void offloadScheduledTasks() {
-        // TODO: retrieve vom BlockingQueue
+    private void offloadScheduledTasks(String taskSchedulingId) throws InterruptedException, PnaApiException {
 
-        // TODO: query from DB
+        logger.info("Try to offload task with id %s".formatted(taskSchedulingId));
+        // TODO: query from DB with UUID
+        Optional<TaskScheduling> taskSchedulingOptional = this.taskSchedulingRepository.findByUuid(UUID.fromString(taskSchedulingId));
 
-        // TODO: Offload to corresponding PNA
+        if (taskSchedulingOptional.isEmpty()) {
+            logger.warn("TaskScheduling not found");
+            return;
+        }
 
-        // TODO: Persist changes to DB, that task is offloaded
+        // retrieve offloaded task
+        TaskScheduling taskSchedulingToBeOffloaded = taskSchedulingOptional.get();
 
+        // check if task has not been scheduled yet
+        if (taskSchedulingToBeOffloaded.getStatus() == TaskStatus.SCHEDULED) {
+            // TODO: Offload to corresponding PNA
+            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offload(taskSchedulingToBeOffloaded.getTask().getUuid().toString(), taskSchedulingToBeOffloaded);
+            System.out.println(createNewTaskOnPnaResponseDTO);
+            // TODO: Query task from DB
+//            Task task = this.taskRepository.findByUuid(taskSchedulingToBeOffloaded.getTask().getUuid()).orElseThrow();
+            taskSchedulingToBeOffloaded.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
+//            task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
+            taskSchedulingToBeOffloaded.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
+            // TODO: Persist changes to DB, that task is offloaded, maybe change to when task is really offloaded
+            taskSchedulingToBeOffloaded.setStatus(TaskStatus.OFFLOADED);
+            this.taskSchedulingRepository.save(taskSchedulingToBeOffloaded);
+            logger.info("TaskScheduling offloaded");
+            // TODO: issue task status change
+        } else {
+            logger.warn("Task with status %s cannot be offloaded because of status change".formatted(taskSchedulingToBeOffloaded.getStatus()));
+        }
     }
 
-    private CreateNewTaskOnPnaResponseDTO offload(TaskScheduling taskScheduling) throws PnaApiException {
+    private CreateNewTaskOnPnaResponseDTO offload(String globalTaskUUId, TaskScheduling taskScheduling) throws PnaApiException {
         // case SCHEDULED or OFFLOADED
         if (taskScheduling.getStatus() == TaskStatus.SCHEDULED) {
             CreateNewTaskOnPnaDTO createNewTaskOnPna = CreateNewTaskOnPnaDTO.builder()
+                    .globalTaskUUID(globalTaskUUId)
                     .applicationId(taskScheduling.getApplicationId())
                     .applicationComponentId(taskScheduling.getApplicationComponentId())
                     .payload(taskScheduling.getTask().getPayload())
@@ -251,7 +287,7 @@ public class TaskService {
         // TODO: get task
         // TODO: TaskScheduling would be sufficient?
         logger.info("Updating task from PNA with %s".formatted(updateTaskFromPNADTO.toString()));
-        Optional<Task> taskOptional = this.taskRepository.findByRemoteTaskUUID(updateTaskFromPNADTO.getRemoteTaskUUID());
+        Optional<Task> taskOptional = this.taskRepository.findByUuid(UUID.fromString(updateTaskFromPNADTO.getGlobalTaskUUID()));
         if (taskOptional.isEmpty()) {
             logger.warn("Task not found");
             return;
@@ -294,8 +330,8 @@ public class TaskService {
 
     @PostConstruct
     public void init() {
-        threadPoolTaskExecutor.execute(() -> {
-            logger.info("Initializing Task Service...");
+        threadPoolTaskExecutor.submit(() -> {
+            logger.info("Initializing task service...");
             while (isRunning.get()) {
                 try {
                     logger.info("Task service is waiting for messages...");
@@ -325,6 +361,26 @@ public class TaskService {
                     logger.warn("Couldn't parse payload...continue", e);
                 } catch (InterruptedException e) {
                     logger.info("Initiate shutdown of TaskService...");
+                    this.isRunning.set(false);
+                }
+            }
+        });
+        threadPoolTaskExecutor.submit(() -> {
+            logger.info("Initializing task scheduling service...");
+            while (isRunning.get()) {
+                try {
+                    logger.info("TaskService is waiting for scheduling tasks");
+                    // TODO: retrieve vom BlockingQueue
+                    String taskSchedulingUuid = this.taskSchedulingQueue.take();
+                    threadPoolTaskScheduler.submit(() -> {
+                        try {
+                            this.offloadScheduledTasks(taskSchedulingUuid);
+                        } catch (InterruptedException | PnaApiException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    logger.info("Initiate shutdown of task scheduling service...");
                     this.isRunning.set(false);
                 }
             }

@@ -14,6 +14,8 @@ import lombok.experimental.SuperBuilder;
 public class TaskSchedulingDTO {
 
     @Builder.Default
+    private String taskId = ""; // global task id
+    @Builder.Default
     private String nodeId = ""; // global node id
     @Builder.Default
     private String applicationId = ""; // global application id
@@ -24,6 +26,7 @@ public class TaskSchedulingDTO {
 
     public static TaskSchedulingDTO from(TaskScheduling taskScheduling) {
         return TaskSchedulingDTO.builder()
+                .taskId(taskScheduling.getGlobalTaskUUID())
                 .nodeId(taskScheduling.getNodeId())
                 .applicationId(taskScheduling.getApplicationId())
                 .applicationComponentId(taskScheduling.getApplicationComponentId())

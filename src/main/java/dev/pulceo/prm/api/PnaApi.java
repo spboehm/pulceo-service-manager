@@ -35,7 +35,7 @@ public class PnaApi {
     }
 
     public CreateNewTaskOnPnaResponseDTO createNewTaskOnPna(String id, CreateNewTaskOnPnaDTO createNewTaskOnPnaDTO) throws PnaApiException {
-        logger.info("Creating new task on PNA {}", id);
+        logger.info("Creating new task on PNA with payload %s".formatted(createNewTaskOnPnaDTO.toString()));
         try {
             NodeDTO node = this.prmApi.getNodeById(id);
             return webClient
