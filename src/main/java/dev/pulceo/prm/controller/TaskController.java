@@ -1,5 +1,6 @@
 package dev.pulceo.prm.controller;
 
+import dev.pulceo.prm.api.exception.PnaApiException;
 import dev.pulceo.prm.dto.task.*;
 import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.task.Task;
@@ -74,6 +75,8 @@ public class TaskController {
             return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
         } catch (TaskServiceException e) {
             return ResponseEntity.status(400).build();
+        } catch (PnaApiException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -17,4 +17,7 @@ public interface TaskSchedulingRepository extends CrudRepository<TaskScheduling,
     @EntityGraph(value = "graph.TaskScheduling.statusLogs")
     Optional<TaskScheduling> findWithStatusLogsByUuid(UUID uuid);
 
+    @EntityGraph(value = "graph.TaskScheduling.task.statusLogs")
+    Optional<TaskScheduling> findWithTaskAndStatusLogsByUuid(UUID uuid);
+
 }

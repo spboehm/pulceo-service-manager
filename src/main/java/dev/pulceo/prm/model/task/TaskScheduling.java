@@ -13,6 +13,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,6 +27,21 @@ import java.util.Objects;
         attributeNodes = {
                 @NamedAttributeNode(value = "statusLogs")
         })
+@NamedEntityGraph(
+        name = "graph.TaskScheduling.task.statusLogs",
+        attributeNodes = {
+                @NamedAttributeNode(value = "statusLogs"),
+                @NamedAttributeNode(value = "task", subgraph = "task.metaData"),
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "task.metaData",
+                        attributeNodes = {
+                                @NamedAttributeNode(value = "taskMetaData"),
+                                @NamedAttributeNode(value = "properties")
+                        })
+        }
+)
 public class TaskScheduling extends BaseEntity {
 
     @Builder.Default
@@ -48,8 +64,9 @@ public class TaskScheduling extends BaseEntity {
     @JoinColumn(name = "task_id")
     @JsonBackReference
     private Task task; // task
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<TaskStatusLog> statusLogs; // task status logs
+    @Builder.Default
+    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    private List<TaskStatusLog> statusLogs = new ArrayList<>(); // task status logs
 
     public void addTask(Task task) {
         this.task = task;
