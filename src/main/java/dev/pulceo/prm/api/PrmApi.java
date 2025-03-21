@@ -40,6 +40,7 @@ public class PrmApi {
             }
             this.nodeCache.put(id, node);
             this.nodeCache.put(node.getNode().getName(), node);
+            this.nodeCache.put(node.getPnaUUID().toString(), node);
             return node;
         }
     }
@@ -74,6 +75,15 @@ public class PrmApi {
                     throw new RuntimeException(new PrmApiException("Failed to get node from PRM", e));
                 })
                 .block();
+    }
+
+    public String resolvePnaUuidToGlobalId(String pnaUUID) throws PrmApiException {
+        String globalId = this.getNodeById(pnaUUID).getUuid().toString();
+        if (globalId == null || globalId.isEmpty()) {
+            throw new PrmApiException("Failed to resolve PNA UUID to global ID");
+        } else {
+            return globalId;
+        }
     }
 
     private boolean checkIfUUID(String uuid) {
