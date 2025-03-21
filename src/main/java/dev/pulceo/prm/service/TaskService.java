@@ -169,38 +169,6 @@ public class TaskService {
             this.taskSchedulingRepository.save(taskScheduling);
             this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
             return taskScheduling;
-            /* case SCHEDULED->OFFLOADED */
-            // this means an ALG has assigned the task to a node, but the platform has not yet scheduled (offloaded) the task
-//            logger.info("Offload SCHEDULED task with id %s".formatted(taskScheduling.getUuid()));
-//            CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offloadToPNA(task.getUuid().toString(), taskScheduling);
-//            task.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
-
-            // add to TaskStatusLog history of TaskScheduling, executed if operation on remote device has success
-            // TaskStatusLog taskStatusLog = ;
-//            TaskStatusLog taskStatusLog = TaskStatusLog.builder()
-//                    .previousStatus(taskScheduling.getStatus())
-//                    .newStatus(updatedTaskScheduling.getStatus())
-//                    .previousStateOfTask(taskScheduling.toString())
-//                    .newStateOfTask(updatedTaskScheduling.toString())
-//                    .taskScheduling(taskScheduling)
-//                    .task(task)
-//                    .build();
-
-            // update task scheduling, remove if UpdateTaskDTO is ready
-//            taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
-//            taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
-//            taskScheduling.setApplicationId(updatedTaskScheduling.getApplicationId());
-//            taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
-//            taskScheduling.setStatus(TaskStatus.OFFLOADED);
-//            taskScheduling.addTaskStatusLog(this.logStatusChange(TaskStatus.SCHEDULED, oldTaskStatus, updatedTaskScheduling, task));
-//            taskScheduling.addTask(task);
-
-            // remote information
-//            taskScheduling.setRemoteNodeUUID(createNewTaskOnPnaResponseDTO.getRemoteNodeUUID().toString());
-//            taskScheduling.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
-            // persist and return
-//            this.taskRepository.save(task); // because of remoteUUIDassignment
-//            return this.taskSchedulingRepository.save(taskScheduling);
         } else {
             throw new TaskServiceException("Status change not supported (yet)...");
         }
