@@ -24,6 +24,7 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -59,6 +60,9 @@ public class TaskService {
     // uuid of task scheduling
     private final BlockingQueue<String> taskSchedulingQueue = new ArrayBlockingQueue<>(1000);
     private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
+
+    @Value("${psm.uuid}")
+    private String PSM_UUID;
 
 
     @Autowired
@@ -155,7 +159,6 @@ public class TaskService {
         if (taskScheduling.getStatus() == TaskStatus.NEW && updatedTaskScheduling.getStatus() == TaskStatus.SCHEDULED) {
             logger.info("Schedule NEW task with id %s".formatted(taskScheduling.getUuid()));
             // only update properties from DTO, other information a filled async
-            // TODO: add global taskId
             taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
             // TODO: check if nodeId exists
             taskScheduling.setNodeId(updatedTaskScheduling.getNodeId());
@@ -166,8 +169,6 @@ public class TaskService {
             // TODO: set new task status to scheduled
             taskScheduling.setStatus(TaskStatus.SCHEDULED);
             // issue new task to be scheduled to background thread via blocking queue
-            // TODO: maybe add task id resolver
-            // TODO: add log
             taskScheduling.addTask(task);
             taskScheduling.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, updatedTaskScheduling, task));
             this.taskSchedulingRepository.save(taskScheduling);
@@ -190,6 +191,9 @@ public class TaskService {
                 .newStatus(updatedTaskScheduling.getStatus())
                 .previousStateOfTask(previousStateOfTask)
                 .newStateOfTask(updatedTaskScheduling.toString())
+                .modifiedBy("psm")
+                .modifiedById(PSM_UUID)
+                // modified on automatically set
                 .taskScheduling(updatedTaskScheduling)
                 .task(task)
                 .build();
@@ -202,14 +206,10 @@ public class TaskService {
     // for updates from pna
     private TaskStatusLog logStatusChange(TaskStatus previousStatus, String previousStateOfTask, TaskScheduling updatedTaskScheduling, Task task, Timestamp modifiedOn, String modifiedBy) {
         TaskStatusLog taskStatusLog = this.logStatusChange(previousStatus, previousStateOfTask, updatedTaskScheduling, task);
+        taskStatusLog.setModifiedById(modifiedBy);
+        taskStatusLog.setModifiedBy("node");
         taskStatusLog.setModifiedOn(modifiedOn);
-        taskStatusLog.setModifiedBy(modifiedBy);
         return taskStatusLog;
-    }
-
-    // TOOD: remove?
-    private void scheduleTask(TaskScheduling taskScheduling, TaskScheduling updatedTaskScheduling) throws TaskServiceException {
-        // TODO: put to taskSchedulingQueue
     }
 
     private void offloadScheduledTasks(String taskSchedulingId) throws InterruptedException, PnaApiException {

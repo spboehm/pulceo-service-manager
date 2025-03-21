@@ -5,7 +5,6 @@ import dev.pulceo.prm.model.task.TaskStatusLog;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,11 +15,15 @@ import java.time.LocalDateTime;
 public class TaskStatusLogDTO {
 
     @Builder.Default
-    private Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
+    private String timestamp = LocalDateTime.now().toString();
     private TaskStatus previousStatus;
     private TaskStatus newStatus;
     @Builder.Default
     private String modifiedBy = "psm";
+    @Builder.Default
+    private String modifiedById = "";
+    @Builder.Default
+    private String modifiedOn = "";
     @Builder.Default
     private String previousStateOfTask = "";
     @Builder.Default
@@ -30,10 +33,12 @@ public class TaskStatusLogDTO {
 
     public static TaskStatusLogDTO from(TaskStatusLog taskStatusLog) {
         return TaskStatusLogDTO.builder()
-                .timestamp(taskStatusLog.getTimestamp())
+                .timestamp(taskStatusLog.getTimestamp().toString())
                 .previousStatus(taskStatusLog.getPreviousStatus())
                 .newStatus(taskStatusLog.getNewStatus())
+                .modifiedOn(taskStatusLog.getModifiedOn().toString())
                 .modifiedBy(taskStatusLog.getModifiedBy())
+                .modifiedById(taskStatusLog.getModifiedById())
                 .previousStateOfTask(taskStatusLog.getPreviousStateOfTask())
                 .newStateOfTask(taskStatusLog.getNewStateOfTask())
                 .comment(taskStatusLog.getComment())
