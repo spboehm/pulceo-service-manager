@@ -12,12 +12,13 @@ import java.util.UUID;
 @Repository
 public interface TaskSchedulingRepository extends CrudRepository<TaskScheduling, Long> {
 
-    Optional<TaskScheduling> findByUuid(UUID uuid);
+    Optional<TaskScheduling> findByTaskUuid(UUID taskUuid);
 
     @EntityGraph(value = "graph.TaskScheduling.statusLogs")
     Optional<TaskScheduling> findWithStatusLogsByUuid(UUID uuid);
 
     @EntityGraph(value = "graph.TaskScheduling.task.statusLogs")
     Optional<TaskScheduling> findWithTaskAndStatusLogsByUuid(UUID uuid);
+
 
 }

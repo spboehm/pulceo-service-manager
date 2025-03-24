@@ -80,6 +80,15 @@ public class TaskController {
         }
     }
 
+    @GetMapping("/{id}/scheduling")
+    ResponseEntity<TaskSchedulingDTO> readTaskSchedulingByTaskId(@PathVariable UUID id) throws TaskServiceException {
+        Optional<TaskScheduling> taskScheduling = this.taskService.readTaskSchedulingByTaskId(String.valueOf(id));
+        if (taskScheduling.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        }
+        return ResponseEntity.status(200).body(TaskSchedulingDTO.from(taskScheduling.get()));
+    }
+
     /* logs */
     @GetMapping("/{id}/scheduling/logs")
     public ResponseEntity<List<TaskStatusLogDTO>> readsTaskSchedulingLogs(@PathVariable UUID id) {

@@ -144,6 +144,15 @@ public class TaskService {
     }
 
     /* Task Scheduling */
+    public Optional<TaskScheduling> readTaskSchedulingByTaskId(String id) throws TaskServiceException {
+        Optional<TaskScheduling> taskSchedulingOptional = this.taskSchedulingRepository.findByTaskUuid(UUID.fromString(id));
+        if (taskSchedulingOptional.isEmpty()) {
+            throw new TaskServiceException("TaskScheduling with id %s not found".formatted(id));
+        }
+        return taskSchedulingOptional;
+    }
+
+
     @Transactional
     public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) throws TaskServiceException, PnaApiException {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
@@ -282,11 +291,9 @@ public class TaskService {
     }
 
     private void updateTaskFromPna(String pnaUUID, UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
-
-        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING) {
-            // TODO: get task
+        logger.info("Updating task, received from PNA with payload %s".formatted(updateTaskFromPNADTO.toString()));
+        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {
             // TODO: TaskScheduling would be sufficient?
-            logger.info("Updating task from PNA with %s".formatted(updateTaskFromPNADTO.toString()));
             Optional<Task> taskOptional = this.taskRepository.findByUuid(UUID.fromString(updateTaskFromPNADTO.getGlobalTaskUUID()));
             if (taskOptional.isEmpty()) {
                 logger.warn("Task not found");
@@ -302,6 +309,8 @@ public class TaskService {
                 throw new TaskServiceException("Associated TaskScheduling not found");
             }
             TaskStatus previousTaskStatus = taskScheduling.get().getStatus();
+            logger.debug("Previous task status is %s".formatted(previousTaskStatus));
+            logger.debug("New task status is %s".formatted(updateTaskFromPNADTO.getNewTaskStatus()));
 
             TaskScheduling taskSchedulingToBeUpdated = taskScheduling.get();
             String stateOfTaskScheduling = taskSchedulingToBeUpdated.toString();
@@ -309,20 +318,21 @@ public class TaskService {
             // create new TaskStatusLog
             try {
                 String globalId = this.prmApi.resolvePnaUuidToGlobalId(pnaUUID);
+                this.taskSchedulingRepository.save(taskSchedulingToBeUpdated);
                 this.taskStatusLogRepository.save(this.logStatusChange(previousTaskStatus, stateOfTaskScheduling, taskSchedulingToBeUpdated, task, updateTaskFromPNADTO.getModifiedOn(), globalId));
             } catch (PrmApiException e) {
                 throw new RuntimeException(e);
             }
             // TODO: broadcast to users
+        } else {
+            this.logger.warn("Unsupported task status, received status %s".formatted(updateTaskFromPNADTO.getNewTaskStatus()));
         }
-
     }
-    // TODO: mqtt listener for task status changes, issued by PNA, using mqtt with topic "cmd/pulceo/tasks"
-
-    // TODO: stop svc
 
     @PostConstruct
     public void init() {
+        // TODO: mqtt listener for task status changes, issued by PNA, using mqtt with topic "cmd/pulceo/tasks"
+        // TODO: stop svc
         // for messages received via mqtt
         threadPoolTaskExecutor.submit(() -> {
             logger.info("Initializing task service...");
@@ -341,7 +351,6 @@ public class TaskService {
                                 logger.info("Update received from %s".formatted(resourceMessage.getSentBydeviceId()));
                                 UpdateTaskFromPNADTO updateTaskFromPNADTO = objectMapper.readValue(resourceMessage.getPayload(), UpdateTaskFromPNADTO.class);
                                 logger.info("Received update for task %s".formatted(updateTaskFromPNADTO.getRemoteTaskUUID()));
-                                // TODO: resolve pnaUUID
                                 this.updateTaskFromPna(resourceMessage.getSentBydeviceId(), updateTaskFromPNADTO);
                             } else {
                                 logger.warn("Unsupported operation for resource type TASK");
@@ -365,7 +374,6 @@ public class TaskService {
             while (isRunning.get()) {
                 try {
                     logger.info("TaskService is waiting for scheduling tasks");
-                    // TODO: retrieve vom BlockingQueue
                     String taskSchedulingUuid = this.taskSchedulingQueue.take();
                     threadPoolTaskScheduler.submit(() -> {
                         try {
