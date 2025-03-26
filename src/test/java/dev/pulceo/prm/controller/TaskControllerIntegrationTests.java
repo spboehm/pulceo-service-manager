@@ -3,6 +3,7 @@ package dev.pulceo.prm.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.pulceo.prm.dto.task.CreateNewTaskDTO;
 import dev.pulceo.prm.repository.TaskRepository;
+import dev.pulceo.prm.repository.TaskStatusLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = { "webclient.scheme=http"})
+@SpringBootTest(properties = {"webclient.scheme=http"})
 @AutoConfigureMockMvc
 public class TaskControllerIntegrationTests {
 
@@ -30,16 +31,20 @@ public class TaskControllerIntegrationTests {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Autowired
+    private TaskStatusLogRepository taskStatusLogRepository;
+
     @BeforeEach
     public void setUp() throws InterruptedException {
         Thread.sleep(100);
+        this.taskStatusLogRepository.deleteAll();
         this.taskRepository.deleteAll();
     }
 
     @Test
     public void testCreateTaskWithPayloadAndMetaData() throws Exception {
         // given
-        HashMap<String,String> payload = new HashMap<>();
+        HashMap<String, String> payload = new HashMap<>();
         payload.put("key", "value");
 
         Timestamp timeStampCreated = Timestamp.valueOf(LocalDateTime.now());
@@ -77,7 +82,6 @@ public class TaskControllerIntegrationTests {
 
     @Test
     public void testReadTaskByUUID() {
-
 
 
     }

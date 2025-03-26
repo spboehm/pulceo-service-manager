@@ -2,6 +2,7 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.repository.TaskRepository;
+import dev.pulceo.prm.repository.TaskStatusLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +20,13 @@ public class TaskServiceIntegrationTests {
     @Autowired
     private TaskRepository taskRepository;
 
+    @Autowired
+    private TaskStatusLogRepository taskStatusLogRepository;
+
     @BeforeEach
     public void setup() {
-        taskRepository.deleteAll();
+        this.taskStatusLogRepository.deleteAll();
+        this.taskRepository.deleteAll();
     }
 
     @Test
