@@ -59,7 +59,7 @@ public class TaskScheduling extends BaseEntity {
     @Builder.Default
     private String applicationComponentId = ""; // global application component id
     @Builder.Default
-    private TaskStatus status = TaskStatus.NEW; // task status
+    private TaskStatus status = TaskStatus.NONE; // task status
     @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE})
     @JoinColumn(name = "task_id")
     @JsonBackReference

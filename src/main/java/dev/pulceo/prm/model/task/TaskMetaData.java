@@ -2,10 +2,7 @@ package dev.pulceo.prm.model.task;
 
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.Entity;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
@@ -13,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @SuperBuilder
 @NoArgsConstructor
+@ToString
 public class TaskMetaData extends BaseEntity {
 
     @Builder.Default

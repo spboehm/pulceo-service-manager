@@ -1,14 +1,12 @@
 package dev.pulceo.prm.model.task;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
 
@@ -21,6 +19,7 @@ import java.util.Objects;
 @Setter
 @SuperBuilder
 @NoArgsConstructor
+@ToString
 public class TaskStatusLog extends BaseEntity {
 
     @Builder.Default
@@ -43,9 +42,11 @@ public class TaskStatusLog extends BaseEntity {
     private String comment = "";
     @ManyToOne(targetEntity = Task.class)
     @JoinColumn(name = "task_id")
+    @JsonBackReference
     private Task task; // task
     @ManyToOne(targetEntity = TaskScheduling.class)
     @JoinColumn(name = "taskScheduling_id")
+    @JsonBackReference
     private TaskScheduling taskScheduling;
 
     @Override

@@ -12,6 +12,8 @@ import dev.pulceo.prm.dto.message.Operation;
 import dev.pulceo.prm.dto.message.ResourceMessage;
 import dev.pulceo.prm.dto.task.UpdateTaskFromPNADTO;
 import dev.pulceo.prm.exception.TaskServiceException;
+import dev.pulceo.prm.model.event.EventType;
+import dev.pulceo.prm.model.event.PulceoEvent;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatus;
@@ -27,15 +29,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -104,6 +107,7 @@ public class TaskService {
 
         // TODO: set task scheduling references
         TaskScheduling taskScheduling = TaskScheduling.builder().build();
+        taskScheduling.setStatus(TaskStatus.NEW);
         taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
         taskScheduling.addTask(task);
         task.setTaskScheduling(taskScheduling);
@@ -115,22 +119,16 @@ public class TaskService {
         // put to redis
 
         // put to sql db
-
-        // TODO: NONE to NEW?, Add to Task Status Log?
-
-        // TODO: broadcast to listener of task, e.g., via MQTT
-        // TODO: broadcast to user, mqtt endpoint "tasks/", todo implement this for the general case
         Task savedTask = this.taskRepository.save(task);
-        // broadcast to user, mqtt endpoint "tasks/", todo implement this for the general case
-        this.taskServiceChannel.send(new GenericMessage<>(task, new MessageHeaders(Map.of("mqtt_topic", "tasks/"))));
+//        TaskScheduling savedTaskScheduling = this.taskSchedulingRepository.save(taskScheduling);
+        TaskStatusLog taskStatusLog = this.logStatusChange(TaskStatus.NONE, savedTask.getTaskScheduling().toString(), savedTask.getTaskScheduling(), savedTask);
+        TaskStatusLog savedTaskStatusLog = this.taskStatusLogRepository.save(taskStatusLog);
         // TODO: create event for the task
-//        this.eventHandler.handleEvent(PulceoEvent.builder()
-//                .eventType(EVENT.APP)
-//                .payload("test")
-//                .build());
-        // TODO:
+        this.eventHandler.handleEvent(PulceoEvent.builder()
+                .eventType(EventType.TASK_CREATED)
+                .payload(savedTaskStatusLog.toString())
+                .build());
         // TODO: In case of status changes, schedule task directly
-
         return savedTask;
     }
 
