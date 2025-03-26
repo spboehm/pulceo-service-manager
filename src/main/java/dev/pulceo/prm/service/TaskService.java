@@ -60,13 +60,13 @@ public class TaskService {
     // uuid of task scheduling
     private final BlockingQueue<String> taskSchedulingQueue = new ArrayBlockingQueue<>(1000);
     private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
+    private final TaskStatisticsService taskStatisticsService;
 
     @Value("${psm.uuid}")
     private String PSM_UUID;
 
-
     @Autowired
-    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi, PrmApi prmApi, ThreadPoolTaskExecutor threadPoolTaskExecutor, BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna, ThreadPoolTaskScheduler threadPoolTaskScheduler) {
+    public TaskService(TaskRepository taskRepository, TaskSchedulingRepository taskSchedulingRepository, TaskStatusLogRepository taskStatusLogRepository, PublishSubscribeChannel taskServiceChannel, EventHandler eventHandler, PnaApi pnaApi, PrmApi prmApi, ThreadPoolTaskExecutor threadPoolTaskExecutor, BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna, ThreadPoolTaskScheduler threadPoolTaskScheduler, TaskStatisticsService taskStatisticsService) {
         this.taskRepository = taskRepository;
         this.taskSchedulingRepository = taskSchedulingRepository;
         this.taskStatusLogRepository = taskStatusLogRepository;
@@ -77,10 +77,14 @@ public class TaskService {
         this.threadPoolTaskExecutor = threadPoolTaskExecutor;
         this.mqttBlockingQueueTasksFromPna = mqttBlockingQueueTasksFromPna;
         this.threadPoolTaskScheduler = threadPoolTaskScheduler;
+        this.taskStatisticsService = taskStatisticsService;
     }
 
     public Task createTask(Task task) throws InterruptedException {
 
+        // log to statistics
+        long taskSequenceNumber = this.taskStatisticsService.incrementTaskNumberAndGet();
+        task.setTaskSequenceNumber(taskSequenceNumber);
         // TODO: validation of Task
 
         // TODO: check for duplicates
@@ -119,13 +123,12 @@ public class TaskService {
         Task savedTask = this.taskRepository.save(task);
         // broadcast to user, mqtt endpoint "tasks/", todo implement this for the general case
         this.taskServiceChannel.send(new GenericMessage<>(task, new MessageHeaders(Map.of("mqtt_topic", "tasks/"))));
-        /*
-        this.eventHandler.handleEvent(PulceoEvent.builder()
-                .eventType(EventType.APP)
-                .payload("test")
-                .build());
-        */
-
+        // TODO: create event for the task
+//        this.eventHandler.handleEvent(PulceoEvent.builder()
+//                .eventType(EVENT.APP)
+//                .payload("test")
+//                .build());
+        // TODO:
         // TODO: In case of status changes, schedule task directly
 
         return savedTask;

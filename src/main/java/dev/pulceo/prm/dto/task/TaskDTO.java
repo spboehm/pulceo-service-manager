@@ -15,6 +15,7 @@ import java.util.UUID;
 @SuperBuilder
 public class TaskDTO {
 
+    private long taskSequenceNumber;
     private UUID taskUUID;
     private TaskMetaDataDTO taskMetaData;
     private TaskSchedulingDTO taskScheduling;
@@ -30,6 +31,7 @@ public class TaskDTO {
 
     public static TaskDTO fromTask(Task task) {
         return TaskDTO.builder()
+                .taskSequenceNumber(task.getTaskSequenceNumber())
                 .taskUUID(task.getUuid())
                 .taskMetaData(TaskMetaDataDTO.from(task.getTaskMetaData()))
                 .taskScheduling(TaskSchedulingDTO.from(task.getTaskScheduling()))

@@ -13,6 +13,8 @@ import java.util.Map;
 @SuperBuilder
 public class CreateNewTaskOnPnaDTO {
     @Builder.Default
+    private long taskSequenceNumber = 0; // sequence number of the task
+    @Builder.Default
     private String globalTaskUUID = ""; // the one from PSM
     @Builder.Default
     private String applicationId = ""; // local application UUID on device (remote from psm)

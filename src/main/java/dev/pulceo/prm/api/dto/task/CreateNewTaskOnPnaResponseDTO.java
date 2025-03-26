@@ -14,6 +14,7 @@ import java.util.UUID;
 @ToString
 public class CreateNewTaskOnPnaResponseDTO {
 
+    private long taskSequenceNumber;
     private String globalTaskUUID; // based on the one from PSM
     private UUID remoteNodeUUID;
     private UUID remoteTaskUUID;

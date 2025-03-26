@@ -17,6 +17,7 @@ import java.util.UUID;
 @SuperBuilder
 public class CreateNewTaskResponseDTO {
 
+    private long taskSequenceNumber;
     private UUID taskUUID;
     private TaskMetaDataDTO taskMetaData;
     @Builder.Default
@@ -35,6 +36,7 @@ public class CreateNewTaskResponseDTO {
 
     public static CreateNewTaskResponseDTO fromTask(Task task) {
         return CreateNewTaskResponseDTO.builder()
+                .taskSequenceNumber(task.getTaskSequenceNumber())
                 .taskUUID(task.getUuid())
                 .taskMetaData(TaskMetaDataDTO.from(task.getTaskMetaData()))
                 .created(task.getCreated())

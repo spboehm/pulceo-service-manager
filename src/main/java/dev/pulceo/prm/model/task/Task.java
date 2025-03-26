@@ -25,6 +25,8 @@ import java.util.Objects;
 public class Task extends BaseEntity {
 
     @Builder.Default
+    private long taskSequenceNumber = 0; // sequence number of the task
+    @Builder.Default
     private String remoteTaskUUID = ""; // name of the task
     @Builder.Default
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
