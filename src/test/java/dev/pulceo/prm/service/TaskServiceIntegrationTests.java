@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.messaging.Message;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -25,6 +26,9 @@ public class TaskServiceIntegrationTests {
 
     @Autowired
     private PublishSubscribeChannel taskServiceChannel;
+
+    @Autowired
+    private BlockingQueue<Message<?>> mqttBlockingQueueTasksFromPna;
 
     @Autowired
     private TaskRepository taskRepository;
@@ -67,5 +71,40 @@ public class TaskServiceIntegrationTests {
         assertNotNull(taskStatusLogMessage.getTaskSchedulingUUID());
         assertEquals("", taskStatusLogMessage.getComment());
     }
+
+
+    @Test
+    public void testUpdateTaskWithNoStatusChange() {
+        // given
+
+        // when
+
+        // then
+
+    }
+
+    @Test
+    public void testUpdateTaskFromNewToScheduled() {
+        // given
+        // (1) create task with status NONE -> NEW
+
+
+        // when
+        // (2) update task from NEW to SCHEDULED
+        // TODO: mock response from PNA to mqttBlockingQueueTasksFromPna in updateTaskFromPna
+        // pna will return RUNNING status, put in mqttBlockingQueueTasksFromPna
+//        this.mqttBlockingQueueTasksFromPna.add();
+
+
+        // then
+
+        // assert SCHEDULED->OFFLOADED
+
+        // assert OFFLOADED->RUNNING
+
+        // assert RUNNING->COMPLETED
+
+    }
+
 
 }
