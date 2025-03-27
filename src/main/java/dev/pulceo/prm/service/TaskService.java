@@ -14,6 +14,7 @@ import dev.pulceo.prm.dto.task.UpdateTaskFromPNADTO;
 import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.event.EventType;
 import dev.pulceo.prm.model.event.PulceoEvent;
+import dev.pulceo.prm.model.message.TaskStatusLogMessage;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatus;
@@ -29,16 +30,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,6 +84,7 @@ public class TaskService {
     }
 
     public Task createTask(Task task) throws InterruptedException {
+        logger.info("Creating task {}", task);
 
         // log to statistics
         long taskSequenceNumber = this.taskStatisticsService.incrementTaskNumberAndGet();
@@ -107,6 +108,7 @@ public class TaskService {
 
         // TODO: set task scheduling references
         TaskScheduling taskScheduling = TaskScheduling.builder().build();
+        String previousStateOfTaskScheduling = taskScheduling.toString();
         taskScheduling.setStatus(TaskStatus.NEW);
         taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
         taskScheduling.addTask(task);
@@ -121,13 +123,17 @@ public class TaskService {
         // put to sql db
         Task savedTask = this.taskRepository.save(task);
 //        TaskScheduling savedTaskScheduling = this.taskSchedulingRepository.save(taskScheduling);
-        TaskStatusLog taskStatusLog = this.logStatusChange(TaskStatus.NONE, savedTask.getTaskScheduling().toString(), savedTask.getTaskScheduling(), savedTask);
+        TaskStatusLog taskStatusLog = this.logStatusChange(TaskStatus.NONE, previousStateOfTaskScheduling, savedTask.getTaskScheduling(), savedTask);
         TaskStatusLog savedTaskStatusLog = this.taskStatusLogRepository.save(taskStatusLog);
-        // TODO: create event for the task
+        // publish event to PMS
+        this.logger.debug("Sent task status log event {} to via event handler to PMS", savedTaskStatusLog);
         this.eventHandler.handleEvent(PulceoEvent.builder()
                 .eventType(EventType.TASK_CREATED)
                 .payload(savedTaskStatusLog.toString())
                 .build());
+        // publish task status log to pms via MQTT
+        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(savedTaskStatusLog), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
+        this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
         // TODO: In case of status changes, schedule task directly
         return savedTask;
     }
