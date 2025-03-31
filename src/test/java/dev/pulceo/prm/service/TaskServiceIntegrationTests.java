@@ -16,6 +16,7 @@ import dev.pulceo.prm.model.task.TaskScheduling;
 import dev.pulceo.prm.model.task.TaskStatus;
 import dev.pulceo.prm.model.task.TaskStatusLog;
 import dev.pulceo.prm.repository.TaskRepository;
+import dev.pulceo.prm.repository.TaskSchedulingRepository;
 import dev.pulceo.prm.repository.TaskStatusLogRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,6 +57,9 @@ public class TaskServiceIntegrationTests {
     @Autowired
     private TaskStatusLogRepository taskStatusLogRepository;
 
+    @Autowired
+    private TaskSchedulingRepository taskSchedulingRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -74,6 +78,7 @@ public class TaskServiceIntegrationTests {
     public void setup() throws InterruptedException {
         Thread.sleep(1000);
         this.taskRepository.deleteAll();
+        this.taskSchedulingRepository.deleteAll();
         this.taskStatusLogRepository.deleteAll();
     }
 
