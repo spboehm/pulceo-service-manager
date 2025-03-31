@@ -237,7 +237,7 @@ public class TaskServiceIntegrationTests {
             } else {
                 throw new TaskServiceException("Task %s not found".formatted(createdTask.getUuid().toString()));
             }
-            Thread.sleep(1500);
+            Thread.sleep(2000);
         } while (refreshedTaskSchedulingFromTaskSvc.get().getStatus() != waitedForTaskStatus && retries-- > 0);
         return refreshedTaskSchedulingFromTaskSvc;
     }
