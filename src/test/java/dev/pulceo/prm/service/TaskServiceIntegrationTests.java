@@ -73,8 +73,8 @@ public class TaskServiceIntegrationTests {
     @BeforeEach
     public void setup() throws InterruptedException {
         Thread.sleep(1000);
-        //this.taskStatusLogRepository.deleteAll();
-        //this.taskRepository.deleteAll();
+        this.taskRepository.deleteAll();
+        this.taskStatusLogRepository.deleteAll();
     }
 
     @AfterAll
