@@ -1,5 +1,6 @@
 package dev.pulceo.prm.service;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ public class TaskStatisticsService {
         return taskCounter.sum();
     }
 
-    //@PostConstruct
+    @PostConstruct
     public void init() {
         this.threadPoolTaskScheduler.scheduleAtFixedRate(() -> {
             this.logger.info("Requests per second (task arrival rate): " + throughputCounter.get());
