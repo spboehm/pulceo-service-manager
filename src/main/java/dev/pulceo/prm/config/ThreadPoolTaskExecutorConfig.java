@@ -19,6 +19,7 @@ public class ThreadPoolTaskExecutorConfig {
     public ThreadPoolTaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(32);
         executor.setWaitForTasksToCompleteOnShutdown(false);
         executor.setAwaitTerminationSeconds(30);
         executor.initialize();
