@@ -289,6 +289,11 @@ public class TaskService {
     }
 
     /* TaskStatusLogs */
+
+    // TODO: add by task uuid
+
+    // TODO: add by taskscheduling uuid
+
     public List<TaskStatusLog> readAllTaskStatusLogsByTaskId(Long id) {
         List<TaskStatusLog> taskStatusLogs = this.taskStatusLogRepository.findTaskStatusLogsByTaskId(id);
         if (taskStatusLogs.isEmpty()) {
