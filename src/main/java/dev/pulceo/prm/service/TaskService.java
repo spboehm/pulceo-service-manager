@@ -279,6 +279,9 @@ public class TaskService {
                     .build();
 
             // TODO: issue event to the "tasks/" endpoint
+
+            // TODO: issue to task endpoint
+
             // note that this is an async operation, task will only be created on remote device, task changes are incoming
             return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
         } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
@@ -336,6 +339,8 @@ public class TaskService {
                 throw new RuntimeException(e);
             }
             // TODO: broadcast to users
+
+            // TODO: broadcast to event endpoint pms
         } else {
             this.logger.warn("Unsupported task status, received status %s".formatted(updateTaskFromPNADTO.getNewTaskStatus()));
         }

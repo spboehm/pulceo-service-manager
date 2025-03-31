@@ -3,7 +3,9 @@ package dev.pulceo.prm.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.pulceo.prm.dto.task.CreateNewTaskDTO;
 import dev.pulceo.prm.repository.TaskRepository;
+import dev.pulceo.prm.repository.TaskSchedulingRepository;
 import dev.pulceo.prm.repository.TaskStatusLogRepository;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class TaskControllerIntegrationTests {
     private TaskRepository taskRepository;
 
     @Autowired
+    private TaskSchedulingRepository taskSchedulingRepository;
+
+    @Autowired
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -35,10 +40,12 @@ public class TaskControllerIntegrationTests {
     private TaskStatusLogRepository taskStatusLogRepository;
 
     @BeforeEach
+    @Transactional
     public void setUp() throws InterruptedException {
         Thread.sleep(100);
-        this.taskStatusLogRepository.deleteAll();
         this.taskRepository.deleteAll();
+        this.taskSchedulingRepository.deleteAll();
+        this.taskStatusLogRepository.deleteAll();
     }
 
     @Test

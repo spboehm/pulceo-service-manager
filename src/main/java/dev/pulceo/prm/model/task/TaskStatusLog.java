@@ -41,11 +41,11 @@ public class TaskStatusLog extends BaseEntity {
     @Builder.Default
     private String comment = "";
     @ManyToOne(targetEntity = Task.class)
-    @JoinColumn(name = "task_id")
+    @JoinColumn
     @JsonBackReference
     private Task task; // task
     @ManyToOne(targetEntity = TaskScheduling.class)
-    @JoinColumn(name = "taskScheduling_id")
+    @JoinColumn
     @JsonBackReference
     private TaskScheduling taskScheduling;
 

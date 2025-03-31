@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.ArrayList;
@@ -60,12 +62,13 @@ public class TaskScheduling extends BaseEntity {
     private String applicationComponentId = ""; // global application component id
     @Builder.Default
     private TaskStatus status = TaskStatus.NONE; // task status
-    @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE})
+    @OneToOne(targetEntity = Task.class, cascade = {CascadeType.MERGE, CascadeType.REMOVE})
     @JoinColumn(name = "task_id")
     @JsonBackReference
     private Task task; // task
     @Builder.Default
-    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE})
+    @OneToMany(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.REMOVE}, mappedBy = "taskScheduling")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<TaskStatusLog> statusLogs = new ArrayList<>(); // task status logs
 
     public void addTask(Task task) {

@@ -223,6 +223,7 @@ public class TaskServiceIntegrationTests {
         assert (taskStatusLogs.get(4).getNewStatus() == TaskStatus.COMPLETED);
     }
 
+    // TODO: replace spin wait with reactive approach (event to pms service)
     private Optional<TaskScheduling> waitForTaskTaskSchedulingUpdate(Task createdTask, TaskStatus waitedForTaskStatus) throws TaskServiceException, InterruptedException {
         int retries = 5;
         Optional<TaskScheduling> refreshedTaskSchedulingFromTaskSvc = Optional.empty();
@@ -236,7 +237,7 @@ public class TaskServiceIntegrationTests {
             } else {
                 throw new TaskServiceException("Task %s not found".formatted(createdTask.getUuid().toString()));
             }
-            Thread.sleep(1000);
+            Thread.sleep(1500);
         } while (refreshedTaskSchedulingFromTaskSvc.get().getStatus() != waitedForTaskStatus && retries-- > 0);
         return refreshedTaskSchedulingFromTaskSvc;
     }

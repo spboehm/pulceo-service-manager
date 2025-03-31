@@ -66,6 +66,7 @@ public class PnaAPITests {
 
         CreateNewTaskOnPnaResponseDTO expectedCreateNewTaskOnPnaResponseDTO = CreateNewTaskOnPnaResponseDTO
                 .builder()
+                .globalTaskUUID("123e4567-e89b-12d3-a456-426614174000")
                 .remoteNodeUUID(UUID.fromString("8f08e447-7ccd-4657-a873-a1d43a733b1a"))
                 .remoteTaskUUID(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"))
                 .status(TaskStatus.NEW)

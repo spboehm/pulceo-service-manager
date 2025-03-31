@@ -1,5 +1,5 @@
 {
-  "taskSequenceNumber": 123456789,
+  "taskSequenceNumber": 0,
   "globalTaskUUID": "123e4567-e89b-12d3-a456-426614174000",
   "remoteNodeUUID": "8f08e447-7ccd-4657-a873-a1d43a733b1a",
   "remoteTaskUUID": "123e4567-e89b-12d3-a456-426614174001",
