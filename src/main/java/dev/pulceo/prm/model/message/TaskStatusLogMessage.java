@@ -1,10 +1,7 @@
 package dev.pulceo.prm.model.message;
 
 import dev.pulceo.prm.model.task.TaskStatusLog;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
@@ -16,17 +13,28 @@ import java.io.Serializable;
 @SuperBuilder
 public class TaskStatusLogMessage implements Serializable {
 
-    private String taskUUID;
-    private String timestamp;
-    private String previousStatus;
-    private String newStatus;
-    private String modifiedOn;
-    private String modifiedBy;
-    private String modifiedById;
-    private String previousStateOfTask;
-    private String newStateOfTask;
-    private String taskSchedulingUUID;
-    private String comment;
+    @Builder.Default
+    private String taskUUID = "";
+    @Builder.Default
+    private String timestamp = "";
+    @Builder.Default
+    private String previousStatus = "";
+    @Builder.Default
+    private String newStatus = "";
+    @Builder.Default
+    private String modifiedOn = "";
+    @Builder.Default
+    private String modifiedBy = "";
+    @Builder.Default
+    private String modifiedById = "";
+    @Builder.Default
+    private String previousStateOfTask = "";
+    @Builder.Default
+    private String newStateOfTask = "";
+    @Builder.Default
+    private String taskSchedulingUUID = "";
+    @Builder.Default
+    private String comment = "";
 
     public static TaskStatusLogMessage fromTaskStatusLog(TaskStatusLog taskStatusLog) {
         return TaskStatusLogMessage.builder()

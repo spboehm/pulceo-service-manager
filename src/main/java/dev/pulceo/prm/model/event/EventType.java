@@ -1,5 +1,7 @@
 package dev.pulceo.prm.model.event;
 
+import dev.pulceo.prm.model.task.TaskStatus;
+
 public enum EventType {
     NODE_CREATED,
     NODE_UPDATED,
@@ -22,5 +24,17 @@ public enum EventType {
     TASK_OFFLOADED,
     TASK_RUNNING,
     TASK_FAILED,
-    TASK_COMPLETED
+    TASK_COMPLETED;
+
+    public static EventType fromTaskStatus(TaskStatus taskStatus) {
+        return switch (taskStatus) {
+            case NEW -> TASK_CREATED;
+            case SCHEDULED -> TASK_SCHEDULED;
+            case OFFLOADED -> TASK_OFFLOADED;
+            case RUNNING -> TASK_RUNNING;
+            case COMPLETED -> TASK_COMPLETED;
+            case FAILED -> TASK_FAILED;
+            default -> throw new IllegalArgumentException("Unsupported TaskStatus: " + taskStatus);
+        };
+    }
 }

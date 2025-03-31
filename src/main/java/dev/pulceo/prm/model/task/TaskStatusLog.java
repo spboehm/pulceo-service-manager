@@ -6,6 +6,7 @@ import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
@@ -29,6 +30,7 @@ public class TaskStatusLog extends BaseEntity {
     @Builder.Default
     private TaskStatus newStatus = TaskStatus.NEW;
     @Builder.Default
+    @NotNull
     private Timestamp modifiedOn = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
     private String modifiedBy = "psm";

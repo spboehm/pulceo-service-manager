@@ -29,6 +29,8 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -252,6 +254,7 @@ public class TaskServiceIntegrationTests {
                 .globalTaskUUID(createdTask.getUuid().toString())
                 .remoteTaskUUID(createdTask.getRemoteTaskUUID())
                 .newTaskStatus(taskStatus)
+                .modifiedOn(Timestamp.valueOf(LocalDateTime.now()))
                 .modifiedByRemoteNodeUUID("8f08e447-7ccd-4657-a873-a1d43a733b1a")
                 .build();
 
