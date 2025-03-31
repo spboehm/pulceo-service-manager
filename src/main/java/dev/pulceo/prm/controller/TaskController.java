@@ -77,6 +77,8 @@ public class TaskController {
             return ResponseEntity.status(400).build();
         } catch (PnaApiException e) {
             throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

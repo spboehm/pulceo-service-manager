@@ -125,17 +125,24 @@ public class TaskService {
 //        TaskScheduling savedTaskScheduling = this.taskSchedulingRepository.save(taskScheduling);
         TaskStatusLog taskStatusLog = this.logStatusChange(TaskStatus.NONE, previousStateOfTaskScheduling, savedTask.getTaskScheduling(), savedTask);
         TaskStatusLog savedTaskStatusLog = this.taskStatusLogRepository.save(taskStatusLog);
-        // publish event to PMS
-        this.logger.debug("Sent task status log event {} to via event handler to PMS", savedTaskStatusLog);
-        this.eventHandler.handleEvent(PulceoEvent.builder()
-                .eventType(EventType.TASK_CREATED)
-                .payload(savedTaskStatusLog.toString())
-                .build());
+        // publish event to PMS via MQTT
+        issueEventToPMS(EventType.TASK_CREATED, savedTaskStatusLog);
         // publish task status log to pms via MQTT
-        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(savedTaskStatusLog), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
+        issueTaskStatusLogToPMS(savedTaskStatusLog);
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
         // TODO: In case of status changes, schedule task directly
         return savedTask;
+    }
+
+    private void issueTaskStatusLogToPMS(TaskStatusLog savedTaskStatusLog) {
+        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(savedTaskStatusLog), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
+    }
+
+    private void issueEventToPMS(EventType eventType, TaskStatusLog savedTaskStatusLog) throws InterruptedException {
+        this.eventHandler.handleEvent(PulceoEvent.builder()
+                .eventType(eventType)
+                .payload(savedTaskStatusLog.toString())
+                .build());
     }
 
     @Transactional
@@ -161,7 +168,7 @@ public class TaskService {
 
 
     @Transactional
-    public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) throws TaskServiceException, PnaApiException {
+    public TaskScheduling updateTaskScheduling(UUID taskUUID, TaskScheduling updatedTaskScheduling) throws TaskServiceException, PnaApiException, InterruptedException {
         Task task = this.taskRepository.findByUuid(taskUUID).orElseThrow();
         TaskScheduling taskScheduling = task.getTaskScheduling();
         String oldTaskStatus = taskScheduling.toString();
@@ -185,18 +192,20 @@ public class TaskService {
             // TODO: set new task status to scheduled
             taskScheduling.setStatus(TaskStatus.SCHEDULED);
             // issue new task to be scheduled to background thread via blocking queue
+            // TODO: order of save of TaskStatusLog?
             taskScheduling.addTask(task);
-            taskScheduling.addTaskStatusLog(this.logStatusChange(TaskStatus.NEW, oldTaskStatus, updatedTaskScheduling, task));
-            this.taskSchedulingRepository.save(taskScheduling);
+            TaskStatusLog taskStatusLogScheduled = this.logStatusChange(TaskStatus.NEW, oldTaskStatus, updatedTaskScheduling, task);
+            taskScheduling.addTaskStatusLog(taskStatusLogScheduled);
+            TaskScheduling savedTaskScheduling = this.taskSchedulingRepository.save(taskScheduling);
+            // publish event to PMS via MQTT
+            issueEventToPMS(EventType.TASK_SCHEDULED, taskStatusLogScheduled);
+            // publish task status log to pms via MQTT
+            issueTaskStatusLogToPMS(taskStatusLogScheduled);
             this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
-            return taskScheduling;
+            return savedTaskScheduling;
         } else {
             throw new TaskServiceException("Status change not supported (yet)...");
         }
-
-        // TODO: offload directly to PNA
-
-        // TODO: After NEW->SCHEDULED, implement SCHEDULED->OFFLOADED in a asynchronous operation
     }
 
     // for psm
