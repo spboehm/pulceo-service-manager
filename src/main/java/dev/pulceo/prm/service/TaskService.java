@@ -240,6 +240,7 @@ public class TaskService {
         // retrieve offloaded task
         TaskScheduling taskSchedulingToBeOffloaded = taskSchedulingOptional.get();
         String oldTaskStatus = taskSchedulingToBeOffloaded.toString();
+        logger.debug("Try to schedule task scheduling with old state " + oldTaskStatus);
 
         // check if task has not been scheduled yet
         if (taskSchedulingToBeOffloaded.getStatus() == TaskStatus.SCHEDULED) {
