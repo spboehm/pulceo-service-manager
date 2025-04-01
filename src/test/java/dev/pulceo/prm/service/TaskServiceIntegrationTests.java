@@ -100,9 +100,15 @@ public class TaskServiceIntegrationTests {
 
         // when
         BlockingQueue<TaskStatusLogMessage> taskStatusLogMessageBlockingQueue = new ArrayBlockingQueue<>(10);
-        this.taskServiceChannel.subscribe(message -> taskStatusLogMessageBlockingQueue.add((TaskStatusLogMessage) message.getPayload()));
-        // create task and wait for result
+        this.taskServiceChannel.subscribe(message ->
+        {
+            if (message.getPayload() instanceof TaskStatusLogMessage) {
+                taskStatusLogMessageBlockingQueue.add((TaskStatusLogMessage) message.getPayload());
+            }
+        });
         this.taskService.createTask(task);
+
+        // create task and wait for result
         TaskStatusLogMessage taskStatusLogMessage = taskStatusLogMessageBlockingQueue.take();
 
         // then
