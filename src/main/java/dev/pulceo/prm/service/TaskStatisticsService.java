@@ -1,13 +1,11 @@
 package dev.pulceo.prm.service;
 
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -37,14 +35,14 @@ public class TaskStatisticsService {
         return taskCounter.sum();
     }
 
-    @PostConstruct
-    public void init() {
-        this.threadPoolTaskScheduler.scheduleAtFixedRate(() -> {
-            this.logger.info("Requests per second (task arrival rate): " + throughputCounter.get());
-            this.logger.info("Total number of tasks: " + getNumberOfTasks());
-            // TODO: logg persistently to pms
-            throughputCounter.set(0); // Reset the counter
-        }, Duration.ofSeconds(1));
-    }
+//    @PostConstruct
+//    public void init() {
+//        this.threadPoolTaskScheduler.scheduleAtFixedRate(() -> {
+//            this.logger.info("Requests per second (task arrival rate): " + throughputCounter.get());
+//            this.logger.info("Total number of tasks: " + getNumberOfTasks());
+//            // TODO: logg persistently to pms
+//            throughputCounter.set(0); // Reset the counter
+//        }, Duration.ofSeconds(1));
+//    }
 
 }
