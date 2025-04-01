@@ -14,6 +14,7 @@ import dev.pulceo.prm.dto.task.UpdateTaskFromPNADTO;
 import dev.pulceo.prm.exception.TaskServiceException;
 import dev.pulceo.prm.model.event.EventType;
 import dev.pulceo.prm.model.event.PulceoEvent;
+import dev.pulceo.prm.model.message.TaskMessage;
 import dev.pulceo.prm.model.message.TaskStatusLogMessage;
 import dev.pulceo.prm.model.task.Task;
 import dev.pulceo.prm.model.task.TaskScheduling;
@@ -129,9 +130,19 @@ public class TaskService {
         issueEventToPMS(EventType.fromTaskStatus(taskScheduling.getStatus()), savedTaskStatusLog);
         // publish task status log to pms via MQTT
         issueTaskStatusLogToPMS(savedTaskStatusLog);
+        // issue to user
+        issueNewTaskToUser(savedTask);
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
         // TODO: In case of status changes, schedule task directly
         return savedTask;
+    }
+
+    private void issueCompletedTaskToUser(Task task, TaskStatus taskStatus) {
+        this.taskServiceChannel.send(new GenericMessage<>(TaskMessage.fromTask(task, taskStatus), new MessageHeaders(Map.of("mqtt_topic", "tasks/completed"))));
+    }
+
+    private void issueNewTaskToUser(Task task) {
+        this.taskServiceChannel.send(new GenericMessage<>(TaskMessage.fromTask(task), new MessageHeaders(Map.of("mqtt_topic", "tasks/new"))));
     }
 
     private void issueTaskStatusLogToPMS(TaskStatusLog savedTaskStatusLog) {
@@ -349,6 +360,11 @@ public class TaskService {
                 issueEventToPMS(EventType.fromTaskStatus(updateTaskFromPNADTO.getNewTaskStatus()), savedTaskStatusLog);
                 // publish task status log to pms via MQTT
                 issueTaskStatusLogToPMS(savedTaskStatusLog);
+                // issue to user
+                // TODO: handle case running
+                if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {
+                    issueCompletedTaskToUser(task, TaskStatus.COMPLETED);
+                }
                 // TODO: broadcast to users
             } catch (PrmApiException | InterruptedException e) {
                 throw new RuntimeException(e);
