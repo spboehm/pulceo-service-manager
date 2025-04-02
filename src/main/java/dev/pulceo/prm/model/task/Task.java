@@ -70,6 +70,7 @@ public class Task extends BaseEntity {
     public static Task fromCreateNewTaskDTO(@Valid CreateNewTaskDTO createNewTaskDTO) {
         return Task.builder()
                 .created(createNewTaskDTO.getCreated())
+                .createdBy(createNewTaskDTO.getCreatedBy())
                 .payload(createNewTaskDTO.getPayload())
                 .sizeOfWorkload(createNewTaskDTO.getSizeOfWorkload())
                 .sizeDuringTransmission(createNewTaskDTO.getSizeDuringTransmission())
