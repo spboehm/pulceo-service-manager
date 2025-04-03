@@ -15,9 +15,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Getter
@@ -27,11 +25,13 @@ import java.util.Objects;
 @NamedEntityGraph(
         name = "graph.TaskScheduling.statusLogs",
         attributeNodes = {
+                @NamedAttributeNode(value = "properties"),
                 @NamedAttributeNode(value = "statusLogs")
         })
 @NamedEntityGraph(
         name = "graph.TaskScheduling.task.statusLogs",
         attributeNodes = {
+                @NamedAttributeNode(value = "properties"),
                 @NamedAttributeNode(value = "statusLogs"),
                 @NamedAttributeNode(value = "task", subgraph = "task.metaData"),
         },
@@ -50,6 +50,12 @@ public class TaskScheduling extends BaseEntity {
     private String globalTaskUUID = ""; // gloval UUID on device
     @Builder.Default
     private String remoteTaskUUID = ""; // remote task uuid on deviss
+    @Builder.Default
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name = "orchestration_property_key")
+    @Column(name = "orchestration_property_value")
+    @CollectionTable(name = "orchestration_properties", joinColumns = @JoinColumn(name = "orchestration_property_id"))
+    private Map<String, String> properties = new HashMap<>(); // properties of the task
     @Builder.Default
     private String nodeId = ""; // global node id where the task is scheduled
     @NotNull(message = "Remote node id is required!")
@@ -87,6 +93,7 @@ public class TaskScheduling extends BaseEntity {
                 .applicationId(taskSchedulingDTO.getApplicationId())
                 .applicationComponentId(taskSchedulingDTO.getApplicationComponentId())
                 .status(taskSchedulingDTO.getStatus())
+                .properties(taskSchedulingDTO.getProperties())
                 .build();
     }
 

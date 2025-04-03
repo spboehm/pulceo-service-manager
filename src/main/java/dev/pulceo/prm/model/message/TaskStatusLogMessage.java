@@ -5,6 +5,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -13,6 +15,8 @@ import java.io.Serializable;
 @SuperBuilder
 public class TaskStatusLogMessage implements Serializable {
 
+    @Builder.Default
+    private long taskSequenceNumber = 0; // sequence number of the task
     @Builder.Default
     private String taskUUID = "";
     @Builder.Default
@@ -35,9 +39,12 @@ public class TaskStatusLogMessage implements Serializable {
     private String taskSchedulingUUID = "";
     @Builder.Default
     private String comment = "";
+    @Builder.Default
+    private Map<String, String> properties = new HashMap<>();
 
-    public static TaskStatusLogMessage fromTaskStatusLog(TaskStatusLog taskStatusLog) {
+    public static TaskStatusLogMessage fromTaskStatusLog(TaskStatusLog taskStatusLog, Map<String, String> properties) {
         return TaskStatusLogMessage.builder()
+                .taskSequenceNumber(taskStatusLog.getTask().getTaskSequenceNumber())
                 .taskUUID(taskStatusLog.getTask().getUuid().toString())
                 .timestamp(taskStatusLog.getTimestamp().toString())
                 .previousStatus(taskStatusLog.getPreviousStatus().name())
@@ -49,6 +56,7 @@ public class TaskStatusLogMessage implements Serializable {
                 .newStateOfTask(taskStatusLog.getNewStateOfTask())
                 .taskSchedulingUUID(taskStatusLog.getTaskScheduling().getUuid().toString())
                 .comment(taskStatusLog.getComment())
+                .properties(properties)
                 .build();
     }
 

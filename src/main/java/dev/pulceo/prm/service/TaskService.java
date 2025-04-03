@@ -129,7 +129,7 @@ public class TaskService {
         // publish event to PMS via MQTT
         issueEventToPMS(EventType.fromTaskStatus(taskScheduling.getStatus()), savedTaskStatusLog);
         // publish task status log to pms via MQTT
-        issueTaskStatusLogToPMS(savedTaskStatusLog);
+        issueTaskStatusLogToPMS(savedTaskStatusLog, taskScheduling);
         // issue to user
         issueNewTaskToUser(savedTask);
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
@@ -145,8 +145,8 @@ public class TaskService {
         this.taskServiceChannel.send(new GenericMessage<>(TaskMessage.fromTask(task), new MessageHeaders(Map.of("mqtt_topic", "tasks/new"))));
     }
 
-    private void issueTaskStatusLogToPMS(TaskStatusLog savedTaskStatusLog) {
-        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(savedTaskStatusLog), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
+    private void issueTaskStatusLogToPMS(TaskStatusLog savedTaskStatusLog, TaskScheduling taskScheduling) {
+        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(savedTaskStatusLog, taskScheduling.getProperties()), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
     }
 
     private void issueEventToPMS(EventType eventType, TaskStatusLog savedTaskStatusLog) throws InterruptedException {
@@ -202,6 +202,8 @@ public class TaskService {
             taskScheduling.setApplicationComponentId(updatedTaskScheduling.getApplicationComponentId());
             // TODO: set new task status to scheduled
             taskScheduling.setStatus(TaskStatus.SCHEDULED);
+            // set properties
+            taskScheduling.setProperties(updatedTaskScheduling.getProperties());
             // issue new task to be scheduled to background thread via blocking queue
             // TODO: order of save of TaskStatusLog?
             taskScheduling.addTask(task);
@@ -211,7 +213,7 @@ public class TaskService {
             // publish event to PMS via MQTT
             issueEventToPMS(EventType.fromTaskStatus(taskScheduling.getStatus()), taskStatusLogScheduled);
             // publish task status log to pms via MQTT
-            issueTaskStatusLogToPMS(taskStatusLogScheduled);
+            issueTaskStatusLogToPMS(taskStatusLogScheduled, taskScheduling);
             this.taskSchedulingQueue.add(taskScheduling.getUuid().toString());
             return savedTaskScheduling;
         } else {
@@ -282,7 +284,7 @@ public class TaskService {
             // publish event to PMS via MQTT
             issueEventToPMS(EventType.fromTaskStatus(taskSchedulingToBeOffloaded.getStatus()), savedTaskStatusLog);
             // publish task status log to pms via MQTT
-            issueTaskStatusLogToPMS(savedTaskStatusLog);
+            issueTaskStatusLogToPMS(savedTaskStatusLog, taskSchedulingToBeOffloaded);
             logger.info("Successfully offloaded task with id %s".formatted(taskSchedulingId));
         } else {
             logger.warn("Task with status %s cannot be offloaded because of status change".formatted(taskSchedulingToBeOffloaded.getStatus()));
@@ -359,7 +361,7 @@ public class TaskService {
                 // publish event to PMS via MQTT
                 issueEventToPMS(EventType.fromTaskStatus(updateTaskFromPNADTO.getNewTaskStatus()), savedTaskStatusLog);
                 // publish task status log to pms via MQTT
-                issueTaskStatusLogToPMS(savedTaskStatusLog);
+                issueTaskStatusLogToPMS(savedTaskStatusLog, taskSchedulingToBeUpdated);
                 // issue to user
                 // TODO: handle case running
                 if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {

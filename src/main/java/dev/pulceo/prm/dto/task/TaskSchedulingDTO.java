@@ -5,6 +5,9 @@ import dev.pulceo.prm.model.task.TaskStatus;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @Getter
 @Setter
@@ -23,6 +26,8 @@ public class TaskSchedulingDTO {
     private String applicationComponentId = ""; // global application component id
     @Builder.Default
     private TaskStatus status = TaskStatus.NONE; // task status
+    @Builder.Default
+    private Map<String, String> properties = new HashMap<>(); // properties of the task
 
     public static TaskSchedulingDTO from(TaskScheduling taskScheduling) {
         return TaskSchedulingDTO.builder()
@@ -31,6 +36,7 @@ public class TaskSchedulingDTO {
                 .applicationId(taskScheduling.getApplicationId())
                 .applicationComponentId(taskScheduling.getApplicationComponentId())
                 .status(taskScheduling.getStatus())
+                .properties(taskScheduling.getProperties())
                 .build();
     }
 
