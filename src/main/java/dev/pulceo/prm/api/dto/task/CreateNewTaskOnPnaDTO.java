@@ -20,6 +20,7 @@ public class CreateNewTaskOnPnaDTO {
     private String applicationId = ""; // local application UUID on device (remote from psm)
     @Builder.Default
     private String applicationComponentId = ""; // local application component id on device (remote from psm)
+    @Builder.Default
     private byte[] payload = new byte[0]; // payload of the task
     @Builder.Default
     private String callbackProtocol = ""; // statically generated, never changed
