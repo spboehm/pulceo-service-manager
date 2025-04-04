@@ -31,6 +31,7 @@ import org.springframework.messaging.support.GenericMessage;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -106,7 +107,7 @@ public class TaskServiceIntegrationTests {
                 taskStatusLogMessageBlockingQueue.add((TaskStatusLogMessage) message.getPayload());
             }
         });
-        this.taskService.createTask(task);
+        this.taskService.createTask(task, new HashMap<>());
 
         // create task and wait for result
         TaskStatusLogMessage taskStatusLogMessage = taskStatusLogMessageBlockingQueue.take();
@@ -147,7 +148,7 @@ public class TaskServiceIntegrationTests {
                 .payload(new byte[1000])
                 .build();
 
-        Task createdTask = this.taskService.createTask(newTask);
+        Task createdTask = this.taskService.createTask(newTask, new HashMap<>());
 
         /* when */
         // mock response from PNA
@@ -181,6 +182,7 @@ public class TaskServiceIntegrationTests {
         /* then */
         // SCHEDULE the task
         TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(newTask.getUuid(), taskSchedulingRequest);
+        this.taskService.queueForScheduling(updatedTaskScheduling.getUuid().toString());
         assertEquals(TaskStatus.SCHEDULED, updatedTaskScheduling.getStatus());
 
         // assert OFFLOADED
@@ -250,7 +252,7 @@ public class TaskServiceIntegrationTests {
             } else {
                 throw new TaskServiceException("Task %s not found".formatted(createdTask.getUuid().toString()));
             }
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } while (refreshedTaskSchedulingFromTaskSvc.get().getStatus() != waitedForTaskStatus && retries-- > 0);
         return refreshedTaskSchedulingFromTaskSvc;
     }

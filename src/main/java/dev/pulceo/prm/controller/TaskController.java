@@ -38,7 +38,7 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<CreateNewTaskResponseDTO> createNewTask(@Valid @RequestBody CreateNewTaskDTO createNewTaskDTO) throws InterruptedException {
-        Task task = this.taskService.createTask(Task.fromCreateNewTaskDTO(createNewTaskDTO));
+        Task task = this.taskService.createTask(Task.fromCreateNewTaskDTO(createNewTaskDTO), createNewTaskDTO.getSchedulingProperties());
         return ResponseEntity.status(201).body(CreateNewTaskResponseDTO.fromTask(task));
     }
 
@@ -72,6 +72,8 @@ public class TaskController {
         try {
             logger.info("Scheduling task with status %s".formatted(taskSchedulingDTO.toString()));
             TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(id, TaskScheduling.fromTaskSchedulingDTO(taskSchedulingDTO));
+            this.taskService.queueForScheduling(updatedTaskScheduling.getUuid().toString());
+//            this.taskService.enqueue(updatedTaskScheduling.getUuid().toString());
             return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
         } catch (TaskServiceException e) {
             return ResponseEntity.status(400).build();

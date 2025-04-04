@@ -30,5 +30,6 @@ public class CreateNewTaskDTO {
     private Map<String, String> requirements = new HashMap<>(); // requirements for the task
     @Builder.Default
     private Map<String, String> properties = new HashMap<>(); // properties of the task
-
+    @Builder.Default
+    private Map<String, String> schedulingProperties = new HashMap<>(); // scheduling properties of the task
 }
