@@ -191,7 +191,7 @@ public class TaskService {
 
         // TODO: implement NEW->SCHEDULED
         if (taskScheduling.getStatus() == TaskStatus.NEW && updatedTaskScheduling.getStatus() == TaskStatus.SCHEDULED) {
-            logger.info("Schedule NEW task with id %s".formatted(taskScheduling.getUuid()));
+            logger.info("Schedule NEW task with globalTaskUUID %s".formatted(taskUUID));
             // only update properties from DTO, other information a filled async
             taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
             // TODO: check if nodeId exists
@@ -262,7 +262,7 @@ public class TaskService {
         // retrieve offloaded task
         TaskScheduling taskSchedulingToBeOffloaded = taskSchedulingOptional.get();
         String oldTaskStatus = taskSchedulingToBeOffloaded.toString();
-        logger.debug("Try to schedule task scheduling with old state " + oldTaskStatus);
+        logger.debug("Try to schedule task scheduling with old state: {}, status: {}, and global task UUID: {}", oldTaskStatus, taskSchedulingToBeOffloaded.getStatus(), taskSchedulingToBeOffloaded.getGlobalTaskUUID());
 
         // check if task has not been scheduled yet
         if (taskSchedulingToBeOffloaded.getStatus() == TaskStatus.SCHEDULED) {
