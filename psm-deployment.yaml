@@ -11,7 +11,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name:  pulceo-service-manager
+                name: pulceo-service-manager
                 port:
                   number: 7979
           - path: /psm/health
@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: pulceo-service-manager
-          image: ghcr.io/spboehm/pulceo-service-manager:v1.0.0
+          image: ghcr.io/spboehm/pulceo-service-manager:v1.3.0
           imagePullPolicy: Always
           volumeMounts:
             - name: psm-pv-db
