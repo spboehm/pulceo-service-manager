@@ -67,7 +67,7 @@ public class TaskOffloader {
 
     public void updateTaskFromPna(String pnaUUID, UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
         logger.info("Updating task, received from PNA with payload %s".formatted(updateTaskFromPNADTO.toString()));
-        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {
+        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.FAILED) {
             // get task
             Optional<Task> taskOptional = this.taskRepository.findByUuid(UUID.fromString(updateTaskFromPNADTO.getGlobalTaskUUID()));
             if (taskOptional.isEmpty()) {
@@ -100,6 +100,7 @@ public class TaskOffloader {
                 issueTaskStatusLogToPMS(savedTaskStatusLog, taskSchedulingToBeUpdated);
                 // issue to user
                 // TODO: handle case running
+                // TODO: handle case failed
                 if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {
                     issueCompletedTaskToUser(task, TaskStatus.COMPLETED);
                 }
