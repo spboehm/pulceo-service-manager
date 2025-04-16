@@ -22,12 +22,23 @@ public class OrchestrationService {
         this.orchestrationRepository = orchestrationRepository;
     }
 
-    public Orchestration createOrchestration(Orchestration orchestration) {
+    public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
+        if (this.checkIfNameExists(orchestration.getName())) {
+            throw new OrchestrationServiceException("Orchestration with name " + orchestration.getName() + " already exists!");
+        }
         return this.orchestrationRepository.save(orchestration);
     }
 
     public Optional<Orchestration> readOrchestrationByName(String name) {
         return this.orchestrationRepository.findByName(name);
+    }
+
+    private boolean checkIfNameExists(String name) {
+        return this.orchestrationRepository.findByName(name).isPresent();
+    }
+
+    public void deleteOrchestrationByName(String name) {
+        this.orchestrationRepository.deleteOrchestrationByName(name);
     }
 
     @PostConstruct

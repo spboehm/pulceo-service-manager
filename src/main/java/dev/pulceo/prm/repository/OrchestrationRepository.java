@@ -11,5 +11,7 @@ import java.util.Optional;
 public interface OrchestrationRepository extends CrudRepository<Orchestration, Long> {
 
     Optional<Orchestration> findByName(String name);
+
+    void deleteOrchestrationByName(String expectedOrchestrationName);
     
 }

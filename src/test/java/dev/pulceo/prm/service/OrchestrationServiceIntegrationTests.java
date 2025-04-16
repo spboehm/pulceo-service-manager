@@ -1,6 +1,9 @@
 package dev.pulceo.prm.service;
 
+import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
+import dev.pulceo.prm.repository.OrchestrationRepository;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,17 +13,22 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {"webclient.scheme=http"})
+@Transactional
 public class OrchestrationServiceIntegrationTests {
 
     @Autowired
     private OrchestrationService orchestrationService;
 
+    @Autowired
+    private OrchestrationRepository orchestrationRepository;
+
     @Test
-    public void testCreateOrchestration() {
+    public void testCreateOrchestration() throws OrchestrationServiceException {
         // given
         String expectedOrchestrationName = "testOrchestration";
         Orchestration orchestration = Orchestration.builder()
                 .name(expectedOrchestrationName)
+                .description("testOrchestrationDescription")
                 .build();
 
         // when
@@ -30,6 +38,25 @@ public class OrchestrationServiceIntegrationTests {
         assertNotNull(actualOrchestration.getUuid());
         assertEquals(expectedOrchestrationName, actualOrchestration.getName());
         assertEquals(orchestration.getDescription(), actualOrchestration.getDescription());
+    }
+
+    @Test
+    public void testCreateOrchestrationWithExistingName() throws OrchestrationServiceException {
+        // given
+        String orchestrationName = "testOrchestration";
+        Orchestration orchestration = Orchestration.builder()
+                .name(orchestrationName)
+                .description("testOrchestrationDescription")
+                .build();
+        this.orchestrationService.createOrchestration(orchestration);
+
+        // when
+        OrchestrationServiceException exception = assertThrows(OrchestrationServiceException.class, () -> {
+            this.orchestrationService.createOrchestration(orchestration);
+        });
+
+        // then
+        assertEquals("Orchestration with name " + orchestrationName + " already exists!", exception.getMessage());
     }
 
     @Test
@@ -47,5 +74,22 @@ public class OrchestrationServiceIntegrationTests {
         assertEquals("default", orchestration.get().getDescription());
     }
 
+    @Test
+    public void testDeleteOrchestration() throws OrchestrationServiceException {
+        // given
+        String orchestrationName = "testOrchestration";
+        Orchestration orchestration = Orchestration.builder()
+                .name(orchestrationName)
+                .description("testOrchestrationDescription")
+                .build();
+        this.orchestrationService.createOrchestration(orchestration);
+
+        // when
+        this.orchestrationService.deleteOrchestrationByName(orchestrationName);
+
+        // then
+        Optional<Orchestration> deletedOrchestration = this.orchestrationService.readOrchestrationByName(orchestrationName);
+        assertFalse(deletedOrchestration.isPresent());
+    }
 
 }
