@@ -17,7 +17,6 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Orchestration extends BaseEntity {
 
-    
     private String name;
     private String description = "";
 

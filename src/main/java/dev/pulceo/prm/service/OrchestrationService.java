@@ -39,13 +39,14 @@ public class OrchestrationService {
                     .name("default")
                     .description("default")
                     .build();
-            this.createOrchestration(defaultOrchestration);
+            Orchestration createdDefaultOrchestration = this.createOrchestration(defaultOrchestration);
             this.logger.info("Default Orchestration with uuid {}, name {}, and description {} successfully created",
-                    defaultOrchestration.getUuid(),
-                    defaultOrchestration.getName(),
-                    defaultOrchestration.getDescription());
+                    createdDefaultOrchestration.getUuid(),
+                    createdDefaultOrchestration.getName(),
+                    createdDefaultOrchestration.getDescription());
         } else {
             this.logger.error("Orchestration with name {} already exists.", orchestration.get().getName());
+            throw new OrchestrationServiceException("Orchestration with name " + orchestration.get().getName() + " already exists");
         }
     }
 
