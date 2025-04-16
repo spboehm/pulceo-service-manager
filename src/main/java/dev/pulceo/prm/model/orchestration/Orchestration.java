@@ -2,6 +2,7 @@ package dev.pulceo.prm.model.orchestration;
 
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Orchestration extends BaseEntity {
 
+    @NotBlank(message = "Orchestration name cannot be blank!")
     private String name;
     @Builder.Default
     private String description = "";

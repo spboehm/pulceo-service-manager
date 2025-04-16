@@ -7,8 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {"webclient.scheme=http"})
 public class OrchestrationServiceIntegrationTests {
@@ -18,7 +17,19 @@ public class OrchestrationServiceIntegrationTests {
 
     @Test
     public void testCreateOrchestration() {
+        // given
+        String expectedOrchestrationName = "testOrchestration";
+        Orchestration orchestration = Orchestration.builder()
+                .name(expectedOrchestrationName)
+                .build();
 
+        // when
+        Orchestration actualOrchestration = this.orchestrationService.createOrchestration(orchestration);
+
+        // then
+        assertNotNull(actualOrchestration.getUuid());
+        assertEquals(expectedOrchestrationName, actualOrchestration.getName());
+        assertEquals(orchestration.getDescription(), actualOrchestration.getDescription());
     }
 
     @Test
@@ -33,7 +44,7 @@ public class OrchestrationServiceIntegrationTests {
         // then
         assertTrue(orchestration.isPresent());
         assertEquals(orchestrationName, orchestration.get().getName());
-
+        assertEquals("default", orchestration.get().getDescription());
     }
 
 
