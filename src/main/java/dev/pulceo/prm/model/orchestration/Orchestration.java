@@ -2,6 +2,7 @@ package dev.pulceo.prm.model.orchestration;
 
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.Entity;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +19,7 @@ import java.util.Objects;
 public class Orchestration extends BaseEntity {
 
     private String name;
+    @Builder.Default
     private String description = "";
 
     @Override
