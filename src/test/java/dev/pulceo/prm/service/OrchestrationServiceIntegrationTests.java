@@ -2,7 +2,6 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
-import dev.pulceo.prm.repository.OrchestrationRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,6 @@ public class OrchestrationServiceIntegrationTests {
 
     @Autowired
     private OrchestrationService orchestrationService;
-
-    @Autowired
-    private OrchestrationRepository orchestrationRepository;
 
     @Test
     public void testCreateOrchestration() throws OrchestrationServiceException {
