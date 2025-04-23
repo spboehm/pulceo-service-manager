@@ -24,7 +24,7 @@ public class OrchestrationService {
 
     public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
         if (this.checkIfNameExists(orchestration.getName())) {
-            throw new OrchestrationServiceException("Orchestration with name " + orchestration.getName() + " already exists!");
+            throw new OrchestrationServiceException(String.format("Orchestration with name %s already exists!", orchestration.getName()));
         }
         return this.orchestrationRepository.save(orchestration);
     }
