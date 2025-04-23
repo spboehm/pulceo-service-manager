@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +26,7 @@ public class OrchestrationServiceIntegrationTests {
         Orchestration orchestration = Orchestration.builder()
                 .name(expectedOrchestrationName)
                 .description("testOrchestrationDescription")
+                .properties(Map.of("key1", "value1", "key2", "value2"))
                 .build();
 
         // when
@@ -43,6 +45,7 @@ public class OrchestrationServiceIntegrationTests {
         Orchestration orchestration = Orchestration.builder()
                 .name(orchestrationName)
                 .description("testOrchestrationDescription")
+                .properties(Map.of("key1", "value1", "key2", "value2"))
                 .build();
         this.orchestrationService.createOrchestration(orchestration);
 
@@ -68,6 +71,7 @@ public class OrchestrationServiceIntegrationTests {
         assertTrue(orchestration.isPresent());
         assertEquals(orchestrationName, orchestration.get().getName());
         assertEquals("default", orchestration.get().getDescription());
+        assertEquals(Map.of(), orchestration.get().getProperties());
     }
 
     @Test
@@ -77,6 +81,7 @@ public class OrchestrationServiceIntegrationTests {
         Orchestration orchestration = Orchestration.builder()
                 .name(orchestrationName)
                 .description("testOrchestrationDescription")
+                .properties(Map.of("key1", "value1", "key2", "value2"))
                 .build();
         this.orchestrationService.createOrchestration(orchestration);
 

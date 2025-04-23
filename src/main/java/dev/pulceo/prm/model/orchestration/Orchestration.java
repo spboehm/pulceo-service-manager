@@ -1,7 +1,7 @@
 package dev.pulceo.prm.model.orchestration;
 
 import dev.pulceo.prm.model.BaseEntity;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,6 +10,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Entity
@@ -23,6 +25,12 @@ public class Orchestration extends BaseEntity {
     private String name;
     @Builder.Default
     private String description = "";
+    @Builder.Default
+    @ElementCollection(fetch = FetchType.LAZY)
+    @MapKeyColumn(name = "orchestration_property_key")
+    @Column(name = "orchestration_property_value")
+    @CollectionTable(name = "orchestration_properties", joinColumns = @JoinColumn(name = "orchestration_property_id"))
+    private Map<String, String> properties = new HashMap<>();
 
     @Override
     public final boolean equals(Object o) {
@@ -39,4 +47,5 @@ public class Orchestration extends BaseEntity {
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
+
 }

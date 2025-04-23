@@ -52,9 +52,9 @@ public class TaskScheduling extends BaseEntity {
     private String remoteTaskUUID = ""; // remote task uuid on deviss
     @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
-    @MapKeyColumn(name = "orchestration_property_key")
-    @Column(name = "orchestration_property_value")
-    @CollectionTable(name = "orchestration_properties", joinColumns = @JoinColumn(name = "orchestration_property_id"))
+    @MapKeyColumn(name = "task_scheduling_property_key")
+    @Column(name = "task_scheduling_property_value")
+    @CollectionTable(name = "task_scheduling_properties", joinColumns = @JoinColumn(name = "task_scheduling_property_id"))
     private Map<String, String> properties = new HashMap<>(); // properties of the task
     @Builder.Default
     private String nodeId = ""; // global node id where the task is scheduled
