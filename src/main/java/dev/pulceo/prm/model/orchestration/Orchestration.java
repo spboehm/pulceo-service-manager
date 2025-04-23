@@ -26,6 +26,8 @@ public class Orchestration extends BaseEntity {
     @Builder.Default
     private String description = "";
     @Builder.Default
+    private OrchestrationStatus status = OrchestrationStatus.NEW;
+    @Builder.Default
     @ElementCollection(fetch = FetchType.LAZY)
     @MapKeyColumn(name = "orchestration_property_key")
     @Column(name = "orchestration_property_value")
