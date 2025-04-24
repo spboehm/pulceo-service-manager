@@ -9,6 +9,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Map;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,5 +45,49 @@ public class OrchestrationControllerIntegrationTests {
                 .andExpect(jsonPath("$.name").value(orchestrationName));
     }
 
-    
+    @Test
+    public void testReadDefaultOrchestration() throws Exception {
+        // given
+        // Orchestration with name default is automatically created during application startup
+        String orchestrationName = "default";
+
+        // when and then
+        this.mockMvc.perform(get("/api/v1/orchestrations/" + orchestrationName))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(orchestrationName));
+    }
+
+    @Test
+    public void testCreateAndReadOrchestrationById() throws Exception {
+        // given
+        String orchestrationName = "testOrchestration";
+        CreateNewOrchestrationDTO createNewOrchestrationDTO = CreateNewOrchestrationDTO.builder()
+                .name(orchestrationName)
+                .properties(Map.of("key1", "value1", "key2", "value2"))
+                .build();
+
+        this.mockMvc.perform(post("/api/v1/orchestrations")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(createNewOrchestrationDTO)))
+                .andExpect(status().isCreated());
+
+        // when and then
+        this.mockMvc.perform(get("/api/v1/orchestrations/" + orchestrationName))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(orchestrationName))
+                .andExpect(jsonPath("$.properties.key1").value("value1"))
+                .andExpect(jsonPath("$.properties.key2").value("value2"));
+    }
+
+    @Test
+    public void testUpdateOrchestrationProperties() {
+        // given
+        String orchestrationName = "default";
+
+        // when and then
+
+
+    }
+
+
 }

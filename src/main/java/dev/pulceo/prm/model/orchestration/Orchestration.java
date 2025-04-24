@@ -20,6 +20,12 @@ import java.util.Objects;
 @Setter
 @SuperBuilder
 @NoArgsConstructor
+@NamedEntityGraph(
+        name = "graph.orchestration.properties",
+        attributeNodes = {
+                @NamedAttributeNode("properties")
+        }
+)
 public class Orchestration extends BaseEntity {
 
     @NotBlank(message = "Orchestration name cannot be blank!")

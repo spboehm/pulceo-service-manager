@@ -1,15 +1,33 @@
 package dev.pulceo.prm.dto.orchestration;
 
-import java.util.List;
+import dev.pulceo.prm.model.orchestration.Orchestration;
+import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
+import java.util.Map;
+
+@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@SuperBuilder
 public class OrchestrationDTO {
 
     private String name;
     private String description;
-    private List<String> nodes;
-    private List<String> links;
-    private List<String> applications;
-    private List<String> metricRequests;
-    private List<String> events;
+    private OrchestrationStatus status;
+    private Map<String, String> properties;
 
+    public static OrchestrationDTO fromOrchestration(Orchestration orchestration) {
+        return OrchestrationDTO.builder()
+                .name(orchestration.getName())
+                .description(orchestration.getDescription())
+                .status(orchestration.getStatus())
+                .properties(orchestration.getProperties())
+                .build();
+    }
 }

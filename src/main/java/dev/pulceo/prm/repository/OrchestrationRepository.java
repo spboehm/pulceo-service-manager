@@ -2,6 +2,7 @@ package dev.pulceo.prm.repository;
 
 
 import dev.pulceo.prm.model.orchestration.Orchestration;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,12 @@ import java.util.UUID;
 public interface OrchestrationRepository extends CrudRepository<Orchestration, Long> {
 
     Optional<Orchestration> findByName(String name);
+
+    @EntityGraph(value = "graph.orchestration.properties")
+    Optional<Orchestration> findWithPropertiesByName(String name);
+
+    @EntityGraph(value = "graph.orchestration.properties")
+    Optional<Orchestration> findWithPropertiesByUuid(UUID uuid);
 
     void deleteOrchestrationByName(String expectedOrchestrationName);
 

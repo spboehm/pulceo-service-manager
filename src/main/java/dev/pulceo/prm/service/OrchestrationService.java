@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class OrchestrationService {
@@ -41,7 +42,11 @@ public class OrchestrationService {
     }
 
     public Optional<Orchestration> readOrchestrationByName(String name) {
-        return this.orchestrationRepository.findByName(name);
+        return this.orchestrationRepository.findWithPropertiesByName(name);
+    }
+
+    public Optional<Orchestration> readOrchestrationByUUID(UUID uuid) {
+        return this.orchestrationRepository.findWithPropertiesByUuid(uuid);
     }
 
     public Orchestration readDefaultOrchestration() throws OrchestrationServiceException {
@@ -165,5 +170,6 @@ public class OrchestrationService {
                 context.getOrchestration().getDescription(),
                 context.getOrchestration().getStatus());
     }
+
 
 }
