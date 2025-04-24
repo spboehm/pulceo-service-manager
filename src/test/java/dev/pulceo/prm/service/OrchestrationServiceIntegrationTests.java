@@ -3,6 +3,7 @@ package dev.pulceo.prm.service;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
+import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,13 +51,10 @@ public class OrchestrationServiceIntegrationTests {
                 .build();
         this.orchestrationService.createOrchestration(orchestration);
 
-        // when
-        OrchestrationServiceException exception = assertThrows(OrchestrationServiceException.class, () -> {
+        // when and then
+        assertThrows(OrchestrationServiceException.class, () -> {
             this.orchestrationService.createOrchestration(orchestration);
         });
-
-        // then
-        assertEquals("Orchestration with name=" + orchestrationName + " already exists!", exception.getMessage());
     }
 
     @Test
@@ -73,6 +71,51 @@ public class OrchestrationServiceIntegrationTests {
         assertEquals(orchestrationName, orchestration.get().getName());
         assertEquals("default", orchestration.get().getDescription());
         assertEquals(Map.of(), orchestration.get().getProperties());
+    }
+
+    @Test
+    public void testUpdateOrchestrationStatus() throws OrchestrationServiceException {
+        // given
+        String orchestrationName = "testOrchestration";
+        Orchestration orchestration = Orchestration.builder()
+                .name(orchestrationName)
+                .description("testOrchestrationDescription")
+                .properties(Map.of("key1", "value1", "key2", "value2"))
+                .status(OrchestrationStatus.NEW)
+                .build();
+        Orchestration createdOrchestration = this.orchestrationService.createOrchestration(orchestration);
+        OrchestrationStatus initialOrchestrationStatus = createdOrchestration.getStatus();
+
+        // when
+        OrchestrationStatus updatedOrchestrationStatus = OrchestrationStatus.RUNNING;
+        Orchestration updatedOrchestration = this.orchestrationService.updateOrchestrationStatus(createdOrchestration.getName(), updatedOrchestrationStatus);
+
+        // then
+        assertEquals(OrchestrationStatus.NEW, initialOrchestrationStatus);
+        assertEquals(updatedOrchestrationStatus, updatedOrchestration.getStatus());
+    }
+
+    @Test
+    public void testUpdateOrchestrationStatusWithInvalidTransitions() throws OrchestrationServiceException {
+        // given
+        Orchestration orchestration = this.orchestrationService.readDefaultOrchestration();
+
+        // when and then
+        this.orchestrationService.updateOrchestrationStatus(orchestration.getName(), OrchestrationStatus.RUNNING);
+        // invalid transition from RUNNING to NEW
+        assertThrows(OrchestrationServiceException.class, () -> {
+            this.orchestrationService.updateOrchestrationStatus(orchestration.getName(), OrchestrationStatus.NEW);
+        });
+
+        this.orchestrationService.updateOrchestrationStatus(orchestration.getName(), OrchestrationStatus.COMPLETED);
+        // invalid transition from COMPLETED to RUNNING
+        assertThrows(OrchestrationServiceException.class, () -> {
+            this.orchestrationService.updateOrchestrationStatus(orchestration.getName(), OrchestrationStatus.RUNNING);
+        });
+        // invalid transition from COMPLETED to NEW
+        assertThrows(OrchestrationServiceException.class, () -> {
+            this.orchestrationService.updateOrchestrationStatus(orchestration.getName(), OrchestrationStatus.NEW);
+        });
     }
 
     @Test
@@ -129,6 +172,36 @@ public class OrchestrationServiceIntegrationTests {
         assertEquals(1L, orchestrationContext.getId());
         assertNotNull(orchestrationContext.getOrchestration());
         assertEquals(orchestrationName, orchestrationContext.getOrchestration().getName());
+    }
+
+    @Test
+    public void testSetOrchestrationInOrchestrationContextWithRunningOrchestration() throws OrchestrationServiceException {
+        // given
+        String orchestrationName = "testOrchestration";
+        Orchestration orchestration = Orchestration.builder()
+                .name(orchestrationName)
+                .description("testOrchestrationDescription")
+                .properties(Map.of("key1", "value1", "key2", "value2"))
+                .status(OrchestrationStatus.NEW)
+                .build();
+        // create orchestration
+        Orchestration createdOrchestration = this.orchestrationService.createOrchestration(orchestration);
+
+        // assert that the Orchestration is in OrchestrationContext
+        OrchestrationContext orchestrationContext = this.orchestrationService.getOrCreateOrchestrationContext();
+        assertEquals(createdOrchestration, orchestrationContext.getOrchestration());
+
+        // update to running, so that we can test the exception
+        this.orchestrationService.updateOrchestrationStatus(createdOrchestration.getName(), OrchestrationStatus.RUNNING);
+
+        // when and then
+        // try to set the orchestration in the context again, should throw an OrchestrationException because the current orchestration is already running
+        assertThrows(OrchestrationServiceException.class, () -> {
+            this.orchestrationService.setOrchestrationInOrchestrationContext(this.orchestrationService.readDefaultOrchestration());
+        });
+
+        // assert that the created Orchestration is still in the OrchestrationContext
+        assertEquals(createdOrchestration, orchestrationContext.getOrchestration());
     }
 
 }

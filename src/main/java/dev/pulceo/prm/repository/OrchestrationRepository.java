@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface OrchestrationRepository extends CrudRepository<Orchestration, Long> {
@@ -13,5 +14,6 @@ public interface OrchestrationRepository extends CrudRepository<Orchestration, L
     Optional<Orchestration> findByName(String name);
 
     void deleteOrchestrationByName(String expectedOrchestrationName);
-    
+
+    Optional<Orchestration> findByUuid(UUID uuid);
 }

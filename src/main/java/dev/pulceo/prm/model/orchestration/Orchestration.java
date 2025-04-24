@@ -1,5 +1,6 @@
 package dev.pulceo.prm.model.orchestration;
 
+import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationDTO;
 import dev.pulceo.prm.model.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -33,6 +34,14 @@ public class Orchestration extends BaseEntity {
     @Column(name = "orchestration_property_value")
     @CollectionTable(name = "orchestration_properties", joinColumns = @JoinColumn(name = "orchestration_property_id"))
     private Map<String, String> properties = new HashMap<>();
+
+    public static Orchestration fromCreateNewOrchestrationDTO(CreateNewOrchestrationDTO createNewOrchestrationDTO) {
+        return Orchestration.builder()
+                .name(createNewOrchestrationDTO.getName())
+                .description(createNewOrchestrationDTO.getDescription())
+                .properties(createNewOrchestrationDTO.getProperties())
+                .build();
+    }
 
     @Override
     public final boolean equals(Object o) {

@@ -3,6 +3,7 @@ package dev.pulceo.prm.service;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
+import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import dev.pulceo.prm.repository.OrchestrationContextRepository;
 import dev.pulceo.prm.repository.OrchestrationRepository;
 import jakarta.annotation.PostConstruct;
@@ -28,15 +29,15 @@ public class OrchestrationService {
 
     public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
         if (this.checkIfNameExists(orchestration.getName())) {
-            throw new OrchestrationServiceException(String.format("Orchestration with name=%s already exists!", orchestration.getName()));
+            throw new OrchestrationServiceException(String.format("Orchestration with name=%s already exists", orchestration.getName()));
         }
-        // TODO: if there is an Orchestration running, prevent creating a new one, only NEW and TERMINATED orchestrations are allowed
-        this.setOrchestrationInOrchestrationContext(orchestration);
-        logger.info("Set Orchestration with uuid={}, name={}, and description={} in current OrchestrationContext...",
-                orchestration.getUuid(),
-                orchestration.getName(),
-                orchestration.getDescription());
-        return this.orchestrationRepository.save(orchestration);
+        Orchestration savedOrchestration = this.orchestrationRepository.save(orchestration);
+        try {
+            this.setOrchestrationInOrchestrationContext(savedOrchestration);
+        } catch (OrchestrationServiceException e) {
+            this.logger.warn("Could not set Orchestration in OrchestrationContext: {}", e.getMessage());
+        }
+        return savedOrchestration;
     }
 
     public Optional<Orchestration> readOrchestrationByName(String name) {
@@ -48,12 +49,41 @@ public class OrchestrationService {
         if (defaultOrchestration.isPresent()) {
             return defaultOrchestration.get();
         } else {
-            throw new OrchestrationServiceException("Default orchestration not found!");
+            throw new OrchestrationServiceException("Default orchestration not found");
         }
     }
 
     private boolean checkIfNameExists(String name) {
         return this.orchestrationRepository.findByName(name).isPresent();
+    }
+
+    public Orchestration updateOrchestrationStatus(String name, OrchestrationStatus newOrchestrationStatus) throws OrchestrationServiceException {
+        Optional<Orchestration> optionalOrchestration = this.orchestrationRepository.findByName(name);
+        if (optionalOrchestration.isPresent()) {
+            Orchestration updatedOrchestration = optionalOrchestration.get();
+            OrchestrationStatus currentOrchestrationStatus = updatedOrchestration.getStatus();
+            try {
+                validateOrchestrationStatusTransition(currentOrchestrationStatus, newOrchestrationStatus);
+            } catch (OrchestrationServiceException e) {
+                this.logger.error("Invalid status transition for Orchestration with uuid={}, name={} from {} to {}: {}",
+                        optionalOrchestration.get().getUuid(), name, currentOrchestrationStatus, newOrchestrationStatus, e.getMessage());
+                throw new OrchestrationServiceException(e);
+            }
+            updatedOrchestration.setStatus(newOrchestrationStatus);
+            this.logger.info("Updating Orchestration with uuid={}, name={} from status={} to status={}", updatedOrchestration.getUuid(), name, currentOrchestrationStatus, updatedOrchestration.getStatus());
+            return updatedOrchestration;
+        } else {
+            this.logger.error("Orchestration with name={} not found!", name);
+            throw new OrchestrationServiceException("Orchestration with name=%s not found".formatted(name));
+        }
+    }
+
+    private void validateOrchestrationStatusTransition(OrchestrationStatus currentStatus, OrchestrationStatus newStatus) throws OrchestrationServiceException {
+        if ((currentStatus == OrchestrationStatus.NEW && newStatus == OrchestrationStatus.RUNNING) ||
+                (currentStatus == OrchestrationStatus.RUNNING && newStatus == OrchestrationStatus.COMPLETED)) {
+            return; // Valid transition
+        }
+        throw new OrchestrationServiceException(String.format("Invalid status transition from %s to %s", currentStatus, newStatus));
     }
 
     public void deleteOrchestrationByName(String name) throws OrchestrationServiceException {
@@ -80,9 +110,26 @@ public class OrchestrationService {
 
     public OrchestrationContext setOrchestrationInOrchestrationContext(Orchestration orchestration) throws OrchestrationServiceException {
         OrchestrationContext context = this.getOrCreateOrchestrationContext();
-        // TODO: check if there is some running orchestration, if it is the, case throw a OrchestrationServiceException
-        context.setOrchestration(orchestration);
-        return contextRepository.save(context);
+        // only automatically set the orchestration in the context if the currently referenced orchestration is not RUNNING
+        if (context.getOrchestration().getStatus() == OrchestrationStatus.NEW || context.getOrchestration().getStatus() == OrchestrationStatus.COMPLETED) {
+            this.logger.info("Set Orchestration with uuid={}, name={}, description={}, and status={} in OrchestrationContext",
+                    orchestration.getUuid(),
+                    orchestration.getName(),
+                    orchestration.getDescription(),
+                    orchestration.getStatus());
+            context.setOrchestration(orchestration);
+            return contextRepository.save(context);
+        } else {
+            this.logger.error("OrchestrationContext is already referencing an Orchestration with uuid={}, name={}, and status={}, not updating it",
+                    context.getOrchestration().getUuid(),
+                    context.getOrchestration().getName(),
+                    context.getOrchestration().getStatus());
+            throw new OrchestrationServiceException("Could not set Orchestration in OrchestrationContext, " +
+                    "current OrchestrationContext is already referencing an Orchestration with uuid=%s, name=%s, and status=%s".formatted(
+                            context.getOrchestration().getUuid(),
+                            context.getOrchestration().getName(),
+                            context.getOrchestration().getStatus()));
+        }
     }
 
     @PostConstruct
@@ -95,21 +142,23 @@ public class OrchestrationService {
                     .description("default")
                     .build();
             Orchestration createdDefaultOrchestration = this.createOrchestration(defaultOrchestration);
-            this.logger.info("Default Orchestration with uuid={}, name={}, and description={} successfully created.",
+            this.logger.info("Default Orchestration with uuid={}, name={}, description={}, and status={} successfully created",
                     createdDefaultOrchestration.getUuid(),
                     createdDefaultOrchestration.getName(),
-                    createdDefaultOrchestration.getDescription());
+                    createdDefaultOrchestration.getDescription(),
+                    createdDefaultOrchestration.getStatus());
         } else {
-            this.logger.info("Default Orchestration with with uuid={}, name={}, and description={} already exists, " +
-                            "skipping automatic creation...",
+            this.logger.info("Default Orchestration with with uuid={}, name={}, description={}, and status={} already exists, " +
+                            "skipping automatic creation",
                     orchestration.get().getUuid(),
                     orchestration.get().getName(),
-                    orchestration.get().getDescription());
+                    orchestration.get().getDescription(),
+                    orchestration.get().getStatus());
         }
 
         OrchestrationContext context = this.getOrCreateOrchestrationContext();
 
-        this.logger.info("Current OrchestrationContext has id={}, referencing Orchestration with uuid={}, name={}, description={}, and status={}.",
+        this.logger.info("Current OrchestrationContext has id={}, referencing Orchestration with uuid={}, name={}, description={}, and status={}",
                 context.getId(),
                 context.getOrchestration().getUuid(),
                 context.getOrchestration().getName(),
