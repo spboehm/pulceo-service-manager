@@ -30,6 +30,12 @@ public class OrchestrationService {
         if (this.checkIfNameExists(orchestration.getName())) {
             throw new OrchestrationServiceException(String.format("Orchestration with name=%s already exists!", orchestration.getName()));
         }
+        // TODO: if there is an Orchestration running, prevent creating a new one, only NEW and TERMINATED orchestrations are allowed
+        this.setOrchestrationInOrchestrationContext(orchestration);
+        logger.info("Set Orchestration with uuid={}, name={}, and description={} in current OrchestrationContext...",
+                orchestration.getUuid(),
+                orchestration.getName(),
+                orchestration.getDescription());
         return this.orchestrationRepository.save(orchestration);
     }
 
@@ -50,7 +56,12 @@ public class OrchestrationService {
         return this.orchestrationRepository.findByName(name).isPresent();
     }
 
-    public void deleteOrchestrationByName(String name) {
+    public void deleteOrchestrationByName(String name) throws OrchestrationServiceException {
+        OrchestrationContext context = this.getOrCreateOrchestrationContext();
+        // reset orchestration in context to "default" if it is the one being deleted
+        if (context.getOrchestration().getName().equals(name)) {
+            this.setOrchestrationInOrchestrationContext(this.readDefaultOrchestration());
+        }
         this.orchestrationRepository.deleteOrchestrationByName(name);
     }
 
@@ -69,6 +80,7 @@ public class OrchestrationService {
 
     public OrchestrationContext setOrchestrationInOrchestrationContext(Orchestration orchestration) throws OrchestrationServiceException {
         OrchestrationContext context = this.getOrCreateOrchestrationContext();
+        // TODO: check if there is some running orchestration, if it is the, case throw a OrchestrationServiceException
         context.setOrchestration(orchestration);
         return contextRepository.save(context);
     }
