@@ -97,6 +97,7 @@ public class OrchestrationService {
         if (optionalOrchestration.isPresent()) {
             Orchestration orchestration = optionalOrchestration.get();
             orchestration.setProperties(properties);
+            this.logger.info("Updating Orchestration with uuid={}, name={} properties to {}", orchestration.getUuid(), orchestration.getName(), properties);
             return this.orchestrationRepository.save(orchestration);
         } else {
             this.logger.error("Orchestration with id={} not found", id);
