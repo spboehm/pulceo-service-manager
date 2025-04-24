@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Getter
@@ -17,6 +18,7 @@ import java.util.Map;
 @SuperBuilder
 public class OrchestrationDTO {
 
+    private UUID uuid;
     private String name;
     private String description;
     private OrchestrationStatus status;
@@ -24,6 +26,7 @@ public class OrchestrationDTO {
 
     public static OrchestrationDTO fromOrchestration(Orchestration orchestration) {
         return OrchestrationDTO.builder()
+                .uuid(orchestration.getUuid())
                 .name(orchestration.getName())
                 .description(orchestration.getDescription())
                 .status(orchestration.getStatus())
