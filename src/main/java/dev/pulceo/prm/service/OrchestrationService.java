@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,11 +42,11 @@ public class OrchestrationService {
         return savedOrchestration;
     }
 
-    public Optional<Orchestration> readOrchestrationByName(String name) {
+    public Optional<Orchestration> readOrchestrationWithPropertiesByName(String name) {
         return this.orchestrationRepository.findWithPropertiesByName(name);
     }
 
-    public Optional<Orchestration> readOrchestrationByUUID(UUID uuid) {
+    public Optional<Orchestration> readOrchestrationWithPropertiesByUUID(UUID uuid) {
         return this.orchestrationRepository.findWithPropertiesByUuid(uuid);
     }
 
@@ -62,8 +63,8 @@ public class OrchestrationService {
         return this.orchestrationRepository.findByName(name).isPresent();
     }
 
-    public Orchestration updateOrchestrationStatus(String name, OrchestrationStatus newOrchestrationStatus) throws OrchestrationServiceException {
-        Optional<Orchestration> optionalOrchestration = this.orchestrationRepository.findByName(name);
+    public Orchestration updateOrchestrationStatus(String id, OrchestrationStatus newOrchestrationStatus) throws OrchestrationServiceException {
+        Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
         if (optionalOrchestration.isPresent()) {
             Orchestration updatedOrchestration = optionalOrchestration.get();
             OrchestrationStatus currentOrchestrationStatus = updatedOrchestration.getStatus();
@@ -71,15 +72,15 @@ public class OrchestrationService {
                 validateOrchestrationStatusTransition(currentOrchestrationStatus, newOrchestrationStatus);
             } catch (OrchestrationServiceException e) {
                 this.logger.error("Invalid status transition for Orchestration with uuid={}, name={} from {} to {}: {}",
-                        optionalOrchestration.get().getUuid(), name, currentOrchestrationStatus, newOrchestrationStatus, e.getMessage());
+                        optionalOrchestration.get().getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, newOrchestrationStatus, e.getMessage());
                 throw new OrchestrationServiceException(e);
             }
             updatedOrchestration.setStatus(newOrchestrationStatus);
-            this.logger.info("Updating Orchestration with uuid={}, name={} from status={} to status={}", updatedOrchestration.getUuid(), name, currentOrchestrationStatus, updatedOrchestration.getStatus());
+            this.logger.info("Updating Orchestration with uuid={}, name={} from status={} to status={}", updatedOrchestration.getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, updatedOrchestration.getStatus());
             return updatedOrchestration;
         } else {
-            this.logger.error("Orchestration with name={} not found!", name);
-            throw new OrchestrationServiceException("Orchestration with name=%s not found".formatted(name));
+            this.logger.error("Orchestration with id={} not found!", id);
+            throw new OrchestrationServiceException("Orchestration with id=%s not found".formatted(id));
         }
     }
 
@@ -89,6 +90,18 @@ public class OrchestrationService {
             return; // Valid transition
         }
         throw new OrchestrationServiceException(String.format("Invalid status transition from %s to %s", currentStatus, newStatus));
+    }
+
+    public Orchestration updateOrchestrationProperties(String id, Map<String, String> properties) throws OrchestrationServiceException {
+        Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
+        if (optionalOrchestration.isPresent()) {
+            Orchestration orchestration = optionalOrchestration.get();
+            orchestration.setProperties(properties);
+            return this.orchestrationRepository.save(orchestration);
+        } else {
+            this.logger.error("Orchestration with id={} not found", id);
+            throw new OrchestrationServiceException("Orchestration with id=%s not found".formatted(id));
+        }
     }
 
     public void deleteOrchestrationByName(String name) throws OrchestrationServiceException {
@@ -137,9 +150,22 @@ public class OrchestrationService {
         }
     }
 
+    private Optional<Orchestration> resolveOrchestration(String id) {
+        if (checkIfUUID(id)) {
+            return this.readOrchestrationWithPropertiesByUUID(UUID.fromString(id));
+        } else {
+            return this.readOrchestrationWithPropertiesByName(id);
+        }
+    }
+
+    private boolean checkIfUUID(String uuid) {
+        String uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+        return uuid.matches(uuidRegex);
+    }
+
     @PostConstruct
     public void initDefaultOrchestration() throws OrchestrationServiceException {
-        Optional<Orchestration> orchestration = this.readOrchestrationByName("default");
+        Optional<Orchestration> orchestration = this.readOrchestrationWithPropertiesByName("default");
 
         if (orchestration.isEmpty()) {
             Orchestration defaultOrchestration = Orchestration.builder()

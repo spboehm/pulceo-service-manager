@@ -2,6 +2,7 @@ package dev.pulceo.prm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationDTO;
+import dev.pulceo.prm.dto.orchestration.PatchOrchestrationPropertiesDTO;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -80,13 +80,20 @@ public class OrchestrationControllerIntegrationTests {
     }
 
     @Test
-    public void testUpdateOrchestrationProperties() {
+    public void testUpdateOrchestrationProperties() throws Exception {
         // given
         String orchestrationName = "default";
+        PatchOrchestrationPropertiesDTO patchOrchestrationPropertiesDTO = PatchOrchestrationPropertiesDTO.builder()
+                .properties(Map.of("key1", "newValue1", "key2", "newValue2"))
+                .build();
 
         // when and then
-
-
+        this.mockMvc.perform(patch("/api/v1/orchestrations/" + orchestrationName + "/properties")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(patchOrchestrationPropertiesDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.properties.key1").value("newValue1"))
+                .andExpect(jsonPath("$.properties.key2").value("newValue2"));
     }
 
 

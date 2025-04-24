@@ -3,6 +3,7 @@ package dev.pulceo.prm.controller;
 import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationDTO;
 import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationResponseDTO;
 import dev.pulceo.prm.dto.orchestration.OrchestrationDTO;
+import dev.pulceo.prm.dto.orchestration.PatchOrchestrationPropertiesDTO;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.service.OrchestrationService;
@@ -41,12 +42,23 @@ public class OrchestrationController {
             return ResponseEntity.status(200).body(OrchestrationDTO.fromOrchestration(orchestration.get()));
         }
     }
+    
+    @PatchMapping("/{id}/properties")
+    public ResponseEntity<OrchestrationDTO> patchOrchestrationProperties(@PathVariable String id, @RequestBody PatchOrchestrationPropertiesDTO patchOrchestrationPropertiesDTO) throws OrchestrationServiceException {
+        Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
+        if (optionalOrchestration.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        } else {
+            Orchestration updatedOrchestration = this.orchestrationService.updateOrchestrationProperties(id, patchOrchestrationPropertiesDTO.getProperties());
+            return ResponseEntity.status(200).body(OrchestrationDTO.fromOrchestration(updatedOrchestration));
+        }
+    }
 
     private Optional<Orchestration> resolveOrchestration(String id) {
         if (checkIfUUID(id)) {
-            return orchestrationService.readOrchestrationByUUID(UUID.fromString(id));
+            return this.orchestrationService.readOrchestrationWithPropertiesByUUID(UUID.fromString(id));
         } else {
-            return orchestrationService.readOrchestrationByName(id);
+            return this.orchestrationService.readOrchestrationWithPropertiesByName(id);
         }
     }
 
@@ -54,30 +66,6 @@ public class OrchestrationController {
         String uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
         return uuid.matches(uuidRegex);
     }
-//
-//    @PutMapping("/{name}")
-//    public ResponseEntity<Orchestration> updateOrchestration(@PathVariable String name, @RequestBody Orchestration updatedOrchestration) {
-//        Optional<Orchestration> existingOrchestration = orchestrationService.readOrchestrationByName(name);
-//        if (existingOrchestration.isPresent()) {
-//            Orchestration orchestration = existingOrchestration.get();
-//            orchestration.setName(updatedOrchestration.getName());
-//            orchestration.setDescription(updatedOrchestration.getDescription());
-//            try {
-//                Orchestration savedOrchestration = orchestrationService.createOrchestration(orchestration);
-//                return ResponseEntity.ok(savedOrchestration);
-//            } catch (OrchestrationServiceException e) {y
-//                return ResponseEntity.badRequest().body(null);
-//            }
-//        } else {
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
-//
-//    @DeleteMapping("/{name}")
-//    public ResponseEntity<Void> deleteOrchestrationByName(@PathVariable String name) {
-//        orchestrationService.deleteOrchestrationByName(name);
-//        return ResponseEntity.noContent().build();
-//    }
 
     @ExceptionHandler(value = OrchestrationServiceException.class)
     public ResponseEntity<CustomErrorResponse> handleCloudRegistrationException(OrchestrationServiceException orchestrationServiceException) {

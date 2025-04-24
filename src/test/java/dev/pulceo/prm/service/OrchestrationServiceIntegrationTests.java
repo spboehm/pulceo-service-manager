@@ -64,7 +64,7 @@ public class OrchestrationServiceIntegrationTests {
         String orchestrationName = "default";
 
         // when
-        Optional<Orchestration> orchestration = this.orchestrationService.readOrchestrationByName(orchestrationName);
+        Optional<Orchestration> orchestration = this.orchestrationService.readOrchestrationWithPropertiesByName(orchestrationName);
 
         // then
         assertTrue(orchestration.isPresent());
@@ -133,7 +133,7 @@ public class OrchestrationServiceIntegrationTests {
         this.orchestrationService.deleteOrchestrationByName(orchestrationName);
 
         // then
-        Optional<Orchestration> deletedOrchestration = this.orchestrationService.readOrchestrationByName(orchestrationName);
+        Optional<Orchestration> deletedOrchestration = this.orchestrationService.readOrchestrationWithPropertiesByName(orchestrationName);
         assertFalse(deletedOrchestration.isPresent());
     }
 
