@@ -2,6 +2,8 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
+import dev.pulceo.prm.model.orchestration.OrchestrationContext;
+import dev.pulceo.prm.repository.OrchestrationContextRepository;
 import dev.pulceo.prm.repository.OrchestrationRepository;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -16,15 +18,17 @@ public class OrchestrationService {
 
     private final Logger logger = LoggerFactory.getLogger(OrchestrationService.class);
     private final OrchestrationRepository orchestrationRepository;
+    private final OrchestrationContextRepository contextRepository;
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository) {
         this.orchestrationRepository = orchestrationRepository;
+        this.contextRepository = contextRepository;
     }
 
     public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
         if (this.checkIfNameExists(orchestration.getName())) {
-            throw new OrchestrationServiceException(String.format("Orchestration with name %s already exists!", orchestration.getName()));
+            throw new OrchestrationServiceException(String.format("Orchestration with name=%s already exists!", orchestration.getName()));
         }
         return this.orchestrationRepository.save(orchestration);
     }
@@ -33,12 +37,40 @@ public class OrchestrationService {
         return this.orchestrationRepository.findByName(name);
     }
 
+    public Orchestration readDefaultOrchestration() throws OrchestrationServiceException {
+        Optional<Orchestration> defaultOrchestration = this.orchestrationRepository.findByName("default");
+        if (defaultOrchestration.isPresent()) {
+            return defaultOrchestration.get();
+        } else {
+            throw new OrchestrationServiceException("Default orchestration not found!");
+        }
+    }
+
     private boolean checkIfNameExists(String name) {
         return this.orchestrationRepository.findByName(name).isPresent();
     }
 
     public void deleteOrchestrationByName(String name) {
         this.orchestrationRepository.deleteOrchestrationByName(name);
+    }
+
+    /* OrchestrationContext methods */
+    public OrchestrationContext getOrCreateOrchestrationContext() throws OrchestrationServiceException {
+        Optional<OrchestrationContext> optionalContext = contextRepository.findById(1L);
+        if (optionalContext.isPresent()) {
+            return optionalContext.get();
+        } else {
+            OrchestrationContext context = new OrchestrationContext();
+            context.setId(1L);
+            context.setOrchestration(this.readDefaultOrchestration());
+            return contextRepository.save(context);
+        }
+    }
+
+    public OrchestrationContext setOrchestrationInOrchestrationContext(Orchestration orchestration) throws OrchestrationServiceException {
+        OrchestrationContext context = this.getOrCreateOrchestrationContext();
+        context.setOrchestration(orchestration);
+        return contextRepository.save(context);
     }
 
     @PostConstruct
@@ -51,17 +83,26 @@ public class OrchestrationService {
                     .description("default")
                     .build();
             Orchestration createdDefaultOrchestration = this.createOrchestration(defaultOrchestration);
-            this.logger.info("Default Orchestration with uuid {}, name {}, and description {} successfully created.",
+            this.logger.info("Default Orchestration with uuid={}, name={}, and description={} successfully created.",
                     createdDefaultOrchestration.getUuid(),
                     createdDefaultOrchestration.getName(),
                     createdDefaultOrchestration.getDescription());
         } else {
-            this.logger.info("Default Orchestration with with uuid {}, name {}, and description {} already exists, " +
+            this.logger.info("Default Orchestration with with uuid={}, name={}, and description={} already exists, " +
                             "skipping automatic creation...",
                     orchestration.get().getUuid(),
                     orchestration.get().getName(),
                     orchestration.get().getDescription());
         }
+
+        OrchestrationContext context = this.getOrCreateOrchestrationContext();
+
+        this.logger.info("Current OrchestrationContext has id={}, referencing Orchestration with uuid={}, name={}, description={}, and status={}.",
+                context.getId(),
+                context.getOrchestration().getUuid(),
+                context.getOrchestration().getName(),
+                context.getOrchestration().getDescription(),
+                context.getOrchestration().getStatus());
     }
 
 }

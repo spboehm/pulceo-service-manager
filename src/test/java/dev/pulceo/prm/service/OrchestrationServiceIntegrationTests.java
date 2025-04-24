@@ -2,6 +2,7 @@ package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
+import dev.pulceo.prm.model.orchestration.OrchestrationContext;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +56,7 @@ public class OrchestrationServiceIntegrationTests {
         });
 
         // then
-        assertEquals("Orchestration with name " + orchestrationName + " already exists!", exception.getMessage());
+        assertEquals("Orchestration with name=" + orchestrationName + " already exists!", exception.getMessage());
     }
 
     @Test
@@ -91,6 +92,43 @@ public class OrchestrationServiceIntegrationTests {
         // then
         Optional<Orchestration> deletedOrchestration = this.orchestrationService.readOrchestrationByName(orchestrationName);
         assertFalse(deletedOrchestration.isPresent());
+    }
+
+    @Test
+    public void testGetOrCreateOrchestrationContextWithDefaultOrchestration() throws OrchestrationServiceException {
+        // given
+        // orchestrationService.initDefaultOrchestration(); is supposed to automatically create an Orchestration with the name "default"
+
+        // when
+        OrchestrationContext orchestrationContext = this.orchestrationService.getOrCreateOrchestrationContext();
+
+        // then
+        assertNotNull(orchestrationContext);
+        assertEquals(1L, orchestrationContext.getId());
+        assertNotNull(orchestrationContext.getOrchestration());
+        assertEquals("default", orchestrationContext.getOrchestration().getName());
+
+    }
+
+    @Test
+    public void testSetOrchestrationInOrchestrationContext() throws OrchestrationServiceException {
+        // given
+        String orchestrationName = "testOrchestration";
+        Orchestration orchestration = Orchestration.builder()
+                .name(orchestrationName)
+                .description("testOrchestrationDescription")
+                .properties(Map.of("key1", "value1", "key2", "value2"))
+                .build();
+        this.orchestrationService.createOrchestration(orchestration);
+
+        // when
+        OrchestrationContext orchestrationContext = this.orchestrationService.setOrchestrationInOrchestrationContext(orchestration);
+
+        // then
+        assertNotNull(orchestrationContext);
+        assertEquals(1L, orchestrationContext.getId());
+        assertNotNull(orchestrationContext.getOrchestration());
+        assertEquals(orchestrationName, orchestrationContext.getOrchestration().getName());
     }
 
 }
