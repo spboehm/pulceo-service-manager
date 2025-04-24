@@ -42,7 +42,7 @@ public class OrchestrationController {
             return ResponseEntity.status(200).body(OrchestrationDTO.fromOrchestration(orchestration.get()));
         }
     }
-    
+
     @PatchMapping("/{id}/properties")
     public ResponseEntity<OrchestrationDTO> patchOrchestrationProperties(@PathVariable String id, @RequestBody PatchOrchestrationPropertiesDTO patchOrchestrationPropertiesDTO) throws OrchestrationServiceException {
         Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
