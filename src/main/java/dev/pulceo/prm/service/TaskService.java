@@ -256,6 +256,12 @@ public class TaskService {
         return taskStatusLogs;
     }
 
+    public void reset() {
+        this.taskStatusLogRepository.deleteAll();
+        this.taskSchedulingRepository.deleteAll();
+        this.taskRepository.deleteAll();
+    }
+
 
     @PostConstruct
     public void init() {

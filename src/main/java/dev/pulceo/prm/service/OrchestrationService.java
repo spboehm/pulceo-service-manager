@@ -1,5 +1,7 @@
 package dev.pulceo.prm.service;
 
+import dev.pulceo.prm.api.PmsAPI;
+import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -22,11 +24,15 @@ public class OrchestrationService {
     private final Logger logger = LoggerFactory.getLogger(OrchestrationService.class);
     private final OrchestrationRepository orchestrationRepository;
     private final OrchestrationContextRepository contextRepository;
+    private final PrmApi prmApi;
+    private final PmsAPI pmsAPI;
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PrmApi prmApi, PmsAPI pmsAPI) {
         this.orchestrationRepository = orchestrationRepository;
         this.contextRepository = contextRepository;
+        this.prmApi = prmApi;
+        this.pmsAPI = pmsAPI;
     }
 
     public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
@@ -162,6 +168,17 @@ public class OrchestrationService {
     private boolean checkIfUUID(String uuid) {
         String uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
         return uuid.matches(uuidRegex);
+    }
+
+    public void reset() {
+        // TODO: reset
+
+        // reset PRM
+        this.prmApi.resetOrchestrationContext();
+        // reset PSM
+        this.pmsAPI.resetOrchestrationContext();
+        // TODO: inform about new orchestration context
+
     }
 
     @PostConstruct

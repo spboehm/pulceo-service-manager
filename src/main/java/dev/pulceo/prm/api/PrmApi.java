@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,6 +23,7 @@ public class PrmApi {
     private String prmEndpoint;
     private final WebClient webClient;
     private final static String PRM_NODES_API_BASE_PATH = "/api/v1/nodes";
+    private final static String PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH = "/api/v1/orchestration-context";
     @Value("${webclient.scheme}")
     private String webClientScheme;
 
@@ -84,6 +86,24 @@ public class PrmApi {
         } else {
             return globalId;
         }
+    }
+
+    public void resetOrchestrationContext() {
+        // TODO: implement POST call to /api/v1/orchestration-context/reset
+        this.logger.info("Reset orchestration context on PRM");
+        this.webClient
+                .post()
+                .uri(this.prmEndpoint + this.PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH + "/reset")
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnSuccess(response -> {
+                    this.logger.info("Successfully reset orchestration context on PRM");
+                })
+                .onErrorResume(e -> {
+                    this.logger.error("Failed to reset orchestration context on PRM: {}", e.getMessage());
+                    return Mono.empty();
+                })
+                .block();
     }
 
     private boolean checkIfUUID(String uuid) {

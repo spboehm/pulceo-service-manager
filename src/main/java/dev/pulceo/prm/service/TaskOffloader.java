@@ -38,13 +38,9 @@ import java.util.UUID;
 public class TaskOffloader {
 
     private final Logger logger = LoggerFactory.getLogger(TaskOffloader.class);
-
     private final TaskRepository taskRepository;
-
     private final TaskSchedulingRepository taskSchedulingRepository;
-
     private final TaskStatusLogRepository taskStatusLogRepository;
-
     private final PublishSubscribeChannel taskServiceChannel;
 
     private final PrmApi prmApi;
