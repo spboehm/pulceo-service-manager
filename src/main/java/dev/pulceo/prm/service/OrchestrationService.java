@@ -13,7 +13,6 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -174,7 +173,6 @@ public class OrchestrationService {
         return uuid.matches(uuidRegex);
     }
 
-    @Async
     public void reset() {
         this.pnaApi.resetAllPna();
         // reset PRM

@@ -84,7 +84,7 @@ public class PnaApi {
                     .onErrorResume(e -> {
                         throw new RuntimeException(new PnaApiException("Failed to reset PNA", e));
                     })
-                    .block();
+                    .subscribe();
         } catch (PrmApiException e) {
             throw new PnaApiException("Failed to get node from PRM", e);
         }

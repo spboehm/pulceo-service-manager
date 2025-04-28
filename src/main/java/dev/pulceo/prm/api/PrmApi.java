@@ -118,7 +118,7 @@ public class PrmApi {
                     this.logger.error("Failed to reset orchestration context on PRM: {}", e.getMessage());
                     return Mono.empty();
                 })
-                .block();
+                .subscribe();
     }
 
     private boolean checkIfUUID(String uuid) {

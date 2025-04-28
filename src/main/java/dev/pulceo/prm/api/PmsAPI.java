@@ -43,6 +43,6 @@ public class PmsAPI {
                     this.logger.error("Failed to reset orchestration context on PMS: {}", e.getMessage());
                     return Mono.empty();
                 })
-                .block();
+                .subscribe();
     }
 }
