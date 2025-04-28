@@ -21,9 +21,9 @@ import java.util.UUID;
 @RequestMapping("/api/v1/applications")
 public class ApplicationController {
 
-    ApplicationService applicationService;
-
     @Autowired
+    private final ApplicationService applicationService;
+
     public ApplicationController(ApplicationService applicationService) {
         this.applicationService = applicationService;
     }

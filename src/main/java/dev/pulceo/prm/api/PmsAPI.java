@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
+
+import java.time.Duration;
 
 @Component
 public class PmsAPI {
@@ -32,6 +35,7 @@ public class PmsAPI {
                 .uri(this.pmsEndpoint + this.PMS_ORCHESTRATION_CONTEXT_API_BASE_PATH + "/reset")
                 .retrieve()
                 .bodyToMono(Void.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
                 .doOnSuccess(response -> {
                     this.logger.info("Successfully reset orchestration context on PMS");
                 })

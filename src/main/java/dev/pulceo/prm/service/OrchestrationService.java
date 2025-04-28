@@ -1,6 +1,7 @@
 package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.api.PmsAPI;
+import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
@@ -12,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -26,13 +28,15 @@ public class OrchestrationService {
     private final OrchestrationContextRepository contextRepository;
     private final PrmApi prmApi;
     private final PmsAPI pmsAPI;
+    private final PnaApi pnaApi;
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PrmApi prmApi, PmsAPI pmsAPI) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PrmApi prmApi, PmsAPI pmsAPI, PnaApi pnaApi) {
         this.orchestrationRepository = orchestrationRepository;
         this.contextRepository = contextRepository;
         this.prmApi = prmApi;
         this.pmsAPI = pmsAPI;
+        this.pnaApi = pnaApi;
     }
 
     public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
@@ -170,15 +174,14 @@ public class OrchestrationService {
         return uuid.matches(uuidRegex);
     }
 
+    @Async
     public void reset() {
-        // TODO: reset
-
+        this.pnaApi.resetAllPna();
         // reset PRM
         this.prmApi.resetOrchestrationContext();
         // reset PSM
         this.pmsAPI.resetOrchestrationContext();
         // TODO: inform about new orchestration context
-
     }
 
     @PostConstruct

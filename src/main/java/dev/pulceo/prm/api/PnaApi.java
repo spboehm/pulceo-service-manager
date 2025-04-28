@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
+
 @Component
 public class PnaApi {
     private final Logger logger = LoggerFactory.getLogger(PnaApi.class);
@@ -24,6 +26,7 @@ public class PnaApi {
     private String pna1TestUUID;
     private final WebClient webClient;
     private final static String PNA_TASKS_API_BASE_PATH = "/api/v1/tasks";
+    private final static String PNA_ORCHESTRATION_BASE_PATH = "/api/v1/orchestration-context";
     @Value("${webclient.scheme}")
     private String webClientScheme;
     private final PrmApi prmApi;
@@ -45,8 +48,41 @@ public class PnaApi {
                     .bodyValue(createNewTaskOnPnaDTO)
                     .retrieve()
                     .bodyToMono(CreateNewTaskOnPnaResponseDTO.class)
+                    .doOnSuccess(response -> {
+                        this.logger.info("Successfully reset orchestration context on PRM");
+                    })
                     .onErrorResume(e -> {
                         throw new RuntimeException(new PnaApiException("Failed to assign task to node", e));
+                    })
+                    .block();
+        } catch (PrmApiException e) {
+            throw new PnaApiException("Failed to get node from PRM", e);
+        }
+    }
+
+    public void resetAllPna() {
+        List<NodeDTO> nodes = this.prmApi.getAllNodes();
+        for (NodeDTO node : nodes) {
+            try {
+                this.resetPna(String.valueOf(node.getUuid()));
+            } catch (PnaApiException e) {
+                this.logger.error("Failed to reset PNA with id={} and hostname={}: {}", node.getUuid(), node.getHostname(), e.getMessage());
+            }
+        }
+    }
+
+    public void resetPna(String id) throws PnaApiException {
+        this.logger.info("Resetting PNA with id={}", id);
+        try {
+            NodeDTO node = this.prmApi.getNodeById(id);
+            webClient
+                    .post()
+                    .uri(this.webClientScheme + "://" + node.getHostname() + ":7676" + PNA_ORCHESTRATION_BASE_PATH + "/reset")
+                    .header("Authorization", "Basic " + prmApi.getPnaTokenByNodeId(id))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .onErrorResume(e -> {
+                        throw new RuntimeException(new PnaApiException("Failed to reset PNA", e));
                     })
                     .block();
         } catch (PrmApiException e) {

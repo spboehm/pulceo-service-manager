@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -79,6 +81,19 @@ public class PrmApi {
                 .block();
     }
 
+    public List<NodeDTO> getAllNodes() {
+        return webClient
+                .get()
+                .uri(this.prmEndpoint + PRM_NODES_API_BASE_PATH)
+                .retrieve()
+                .bodyToFlux(NodeDTO.class)
+                .collectList()
+                .onErrorResume(e -> {
+                    throw new RuntimeException(new PrmApiException("Failed to get nodes from PRM", e));
+                })
+                .block();
+    }
+
     public String resolvePnaUuidToGlobalId(String pnaUUID) throws PrmApiException {
         String globalId = this.getNodeById(pnaUUID).getUuid().toString();
         if (globalId == null || globalId.isEmpty()) {
@@ -89,13 +104,13 @@ public class PrmApi {
     }
 
     public void resetOrchestrationContext() {
-        // TODO: implement POST call to /api/v1/orchestration-context/reset
         this.logger.info("Reset orchestration context on PRM");
         this.webClient
                 .post()
-                .uri(this.prmEndpoint + this.PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH + "/reset")
+                .uri(this.prmEndpoint + PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH + "/reset")
                 .retrieve()
                 .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(30))
                 .doOnSuccess(response -> {
                     this.logger.info("Successfully reset orchestration context on PRM");
                 })
