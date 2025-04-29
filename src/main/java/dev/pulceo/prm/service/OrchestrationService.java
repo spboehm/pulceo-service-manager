@@ -13,8 +13,12 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +32,8 @@ public class OrchestrationService {
     private final PrmApi prmApi;
     private final PmsAPI pmsAPI;
     private final PnaApi pnaApi;
+    @Value("${psm.data.dir}")
+    private String psmDataDir;
 
     @Autowired
     public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PrmApi prmApi, PmsAPI pmsAPI, PnaApi pnaApi) {
@@ -182,6 +188,78 @@ public class OrchestrationService {
         // TODO: inform about new orchestration context
     }
 
+    public void collectAllOrchestrationData() throws OrchestrationServiceException {
+        OrchestrationContext orchestrationContext = this.getOrCreateOrchestrationContext();
+        // create dirs for orchestration data
+        this.createDirsForOrchestrationData(orchestrationContext.getOrchestration().getUuid());
+
+        // TODO: static data
+        this.collectStaticOrchestrationData(orchestrationContext.getOrchestration().getUuid());
+
+
+        // TODO: get data from PSM and store under raw
+    }
+
+    public void collectDynamicOrchestrationData() throws OrchestrationServiceException {
+
+    }
+
+    public void collectStaticOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
+        // TODO: PROVIDERS
+
+        // TODO: NODES
+        byte[] nodesRaw = this.prmApi.getAllNodesRaw();
+        this.saveAsJson(nodesRaw, "raw", orchestrationUuid.toString(), "nodes.json");
+
+        // TODO: LINKS
+
+        // TODO: CPUS
+
+        // TODO: MEMORY
+
+        // TODO: STORAGE
+
+        // TODO: Applications
+
+        // TODO: Metric Requests
+    }
+
+    public void saveAsJson(byte[] raw, String subfolder, String orchestrationUuid, String fileName) throws OrchestrationServiceException {
+        try {
+            Path filePath = Path.of(this.psmDataDir, subfolder, orchestrationUuid, fileName);
+            Files.write(filePath, raw); // Write the raw data to the file
+            this.logger.info("Saved raw data to {}", filePath);
+        } catch (IOException e) {
+            this.logger.error("Failed to save raw data to {}/{}", subfolder, fileName, e);
+            throw new OrchestrationServiceException("Failed to save raw data", e);
+        }
+    }
+
+    private void createDirsForOrchestrationData(UUID orchestrationUUID) {
+        logger.info("Creating directories for orchestration data with uuid={}", orchestrationUUID);
+        try {
+            Files.createDirectories(Path.of(this.psmDataDir, "raw", orchestrationUUID.toString()));
+            Files.createDirectories(Path.of(this.psmDataDir, "plots", orchestrationUUID.toString()));
+            Files.createDirectories(Path.of(this.psmDataDir, "latex", orchestrationUUID.toString()));
+            Files.createDirectories(Path.of(this.psmDataDir, "reports", orchestrationUUID.toString()));
+        } catch (IOException e) {
+            logger.error("Could not create directories for orchestration data", e);
+        }
+    }
+
+    private void createPsmDataDirIfNotExists() throws OrchestrationServiceException {
+        try {
+            Files.createDirectories(Path.of(this.psmDataDir, "raw"));
+            Files.createDirectories(Path.of(this.psmDataDir, "plots"));
+            Files.createDirectories(Path.of(this.psmDataDir, "latex"));
+            Files.createDirectories(Path.of(this.psmDataDir, "reports"));
+            this.logger.info("PSM data directory {} created", this.psmDataDir);
+        } catch (IOException e) {
+            logger.error("Could not create PMS data directory", e);
+            throw new OrchestrationServiceException("Could not create PMS data directory", e);
+        }
+    }
+
     @PostConstruct
     public void initDefaultOrchestration() throws OrchestrationServiceException {
         Optional<Orchestration> orchestration = this.readOrchestrationWithPropertiesByName("default");
@@ -214,6 +292,9 @@ public class OrchestrationService {
                 context.getOrchestration().getName(),
                 context.getOrchestration().getDescription(),
                 context.getOrchestration().getStatus());
+
+        // create data dir if not exists
+        this.createPsmDataDirIfNotExists();
     }
 
 

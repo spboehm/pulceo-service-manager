@@ -94,6 +94,18 @@ public class PrmApi {
                 .block();
     }
 
+    public byte[] getAllNodesRaw() {
+        return webClient
+                .get()
+                .uri(this.prmEndpoint + PRM_NODES_API_BASE_PATH)
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .onErrorResume(e -> {
+                    throw new RuntimeException(new PrmApiException("Failed to get nodes from PRM", e));
+                })
+                .block();
+    }
+
     public String resolvePnaUuidToGlobalId(String pnaUUID) throws PrmApiException {
         String globalId = this.getNodeById(pnaUUID).getUuid().toString();
         if (globalId == null || globalId.isEmpty()) {

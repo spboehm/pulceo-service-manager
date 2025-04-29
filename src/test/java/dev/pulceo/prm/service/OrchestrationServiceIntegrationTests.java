@@ -1,5 +1,6 @@
 package dev.pulceo.prm.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -20,6 +21,8 @@ public class OrchestrationServiceIntegrationTests {
 
     @Autowired
     private OrchestrationService orchestrationService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     public void testCreateOrchestration() throws OrchestrationServiceException {
@@ -203,5 +206,6 @@ public class OrchestrationServiceIntegrationTests {
         // assert that the created Orchestration is still in the OrchestrationContext
         assertEquals(createdOrchestration, orchestrationContext.getOrchestration());
     }
+
 
 }
