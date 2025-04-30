@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +26,8 @@ public class PrmApi {
     private String prmEndpoint;
     private final WebClient webClient;
     private final static String PRM_NODES_API_BASE_PATH = "/api/v1/nodes";
+    private final static String PRM_LINKS_API_BASE_PATH = "/api/v1/links";
+    private final static String PRM_RESOURCES_API_BASE_PATH = "/api/v1/resources";
     private final static String PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH = "/api/v1/orchestration-context";
     @Value("${webclient.scheme}")
     private String webClientScheme;
@@ -95,9 +98,29 @@ public class PrmApi {
     }
 
     public byte[] getAllNodesRaw() {
+        return this.getRaw(URI.create(this.prmEndpoint + PRM_NODES_API_BASE_PATH));
+    }
+
+    public byte[] getAllLinksRaw() {
+        return this.getRaw(URI.create(this.prmEndpoint + PRM_LINKS_API_BASE_PATH));
+    }
+
+    public byte[] getAllCpusRaw() {
+        return this.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/cpus"));
+    }
+
+    public byte[] getAllMemoryRaw() {
+        return this.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/memory"));
+    }
+
+    public byte[] getAllStorageRaw() {
+        return this.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/storage"));
+    }
+
+    private byte[] getRaw(URI uri) {
         return webClient
                 .get()
-                .uri(this.prmEndpoint + PRM_NODES_API_BASE_PATH)
+                .uri(uri)
                 .retrieve()
                 .bodyToMono(byte[].class)
                 .onErrorResume(e -> {

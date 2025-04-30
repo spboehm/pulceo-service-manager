@@ -3,6 +3,7 @@ package dev.pulceo.prm.service;
 import dev.pulceo.prm.api.PmsAPI;
 import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.PrmApi;
+import dev.pulceo.prm.api.PsmApi;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -29,6 +30,7 @@ public class OrchestrationService {
     private final Logger logger = LoggerFactory.getLogger(OrchestrationService.class);
     private final OrchestrationRepository orchestrationRepository;
     private final OrchestrationContextRepository contextRepository;
+    private final PsmApi psmApi;
     private final PrmApi prmApi;
     private final PmsAPI pmsAPI;
     private final PnaApi pnaApi;
@@ -36,9 +38,10 @@ public class OrchestrationService {
     private String psmDataDir;
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PrmApi prmApi, PmsAPI pmsAPI, PnaApi pnaApi) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsAPI pmsAPI, PnaApi pnaApi) {
         this.orchestrationRepository = orchestrationRepository;
         this.contextRepository = contextRepository;
+        this.psmApi = psmApi;
         this.prmApi = prmApi;
         this.pmsAPI = pmsAPI;
         this.pnaApi = pnaApi;
@@ -207,21 +210,34 @@ public class OrchestrationService {
     public void collectStaticOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
         // TODO: PROVIDERS
 
-        // TODO: NODES
+        // NODES
         byte[] nodesRaw = this.prmApi.getAllNodesRaw();
-        this.saveAsJson(nodesRaw, "raw", orchestrationUuid.toString(), "nodes.json");
+        this.saveAsJson(nodesRaw, "raw", orchestrationUuid.toString(), "NODES.json");
 
-        // TODO: LINKS
+        // LINKS
+        byte[] linksRaw = this.prmApi.getAllLinksRaw();
+        this.saveAsJson(linksRaw, "raw", orchestrationUuid.toString(), "LINKS.json");
 
-        // TODO: CPUS
+        // CPUS
+        byte[] cpusRaw = this.prmApi.getAllCpusRaw();
+        this.saveAsJson(cpusRaw, "raw", orchestrationUuid.toString(), "CPUS.json");
 
-        // TODO: MEMORY
+        // MEMORY
+        byte[] memoryRaw = this.prmApi.getAllMemoryRaw();
+        this.saveAsJson(memoryRaw, "raw", orchestrationUuid.toString(), "MEMORY.json");
 
-        // TODO: STORAGE
+        // STORAGE
+        byte[] storageRaw = this.prmApi.getAllStorageRaw();
+        this.saveAsJson(storageRaw, "raw", orchestrationUuid.toString(), "STORAGE.json");
 
-        // TODO: Applications
+        // Applications
+        byte[] applicationsRaw = this.psmApi.getAllApplicationsRaw();
+        this.saveAsJson(applicationsRaw, "raw", orchestrationUuid.toString(), "APPLICATIONS.json");
 
-        // TODO: Metric Requests
+        // TODO: Tasks
+
+        // TODO: metrics requests from PSM
+
     }
 
     public void saveAsJson(byte[] raw, String subfolder, String orchestrationUuid, String fileName) throws OrchestrationServiceException {

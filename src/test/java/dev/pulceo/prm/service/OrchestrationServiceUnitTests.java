@@ -1,6 +1,7 @@
 package dev.pulceo.prm.service;
 
 import dev.pulceo.prm.api.PrmApi;
+import dev.pulceo.prm.api.PsmApi;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -28,7 +29,13 @@ public class OrchestrationServiceUnitTests {
     private PrmApi prmApi;
 
     @Mock
+    private PsmApi psmApi;
+
+    @Mock
     private OrchestrationContextRepository orchestrationContextRepository;
+
+    @Mock
+    private ApplicationService applicationService;
 
     @InjectMocks
     private OrchestrationService orchestrationService;
@@ -39,9 +46,15 @@ public class OrchestrationServiceUnitTests {
     }
 
     @Test
-    public void testGetOrchestrationData() throws OrchestrationServiceException, IOException {
+    public void testCollectAllOrchestrationData() throws OrchestrationServiceException, IOException {
         // given
-        when(this.prmApi.getAllNodesRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-api-get-all-nodes.json"));
+        when(this.prmApi.getAllNodesRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-nodes.json"));
+        when(this.prmApi.getAllLinksRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-links.json"));
+        when(this.prmApi.getAllCpusRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-cpus.json"));
+        when(this.prmApi.getAllMemoryRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-memory.json"));
+        when(this.prmApi.getAllStorageRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-storage.json"));
+        when(this.psmApi.getAllApplicationsRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/psmapi-get-all-applications.json"));
+
         when(this.orchestrationContextRepository.findById(1L)).thenReturn(Optional.of(
                 OrchestrationContext.builder()
                         .id(1L)
