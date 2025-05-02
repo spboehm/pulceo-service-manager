@@ -23,9 +23,12 @@ public class PmsAPI {
     @Value("${webclient.scheme}")
     private String webClientScheme;
 
+    private final ApiUtils apiUtils;
+
     @Autowired
-    public PmsAPI(WebClient webClient) {
+    public PmsAPI(WebClient webClient, ApiUtils apiUtils) {
         this.webClient = webClient;
+        this.apiUtils = apiUtils;
     }
 
     public void resetOrchestrationContext() {
@@ -45,4 +48,6 @@ public class PmsAPI {
                 })
                 .subscribe();
     }
+
+
 }

@@ -25,16 +25,19 @@ public class PrmApi {
     @Value("${prm.endpoint}")
     private String prmEndpoint;
     private final WebClient webClient;
+    private final static String PRM_PROVIDERS_API_BASE_PATH = "/api/v1/providers";
     private final static String PRM_NODES_API_BASE_PATH = "/api/v1/nodes";
     private final static String PRM_LINKS_API_BASE_PATH = "/api/v1/links";
     private final static String PRM_RESOURCES_API_BASE_PATH = "/api/v1/resources";
     private final static String PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH = "/api/v1/orchestration-context";
     @Value("${webclient.scheme}")
     private String webClientScheme;
+    private final ApiUtils apiUtils;
 
     @Autowired
-    public PrmApi(WebClient webClient) {
+    public PrmApi(WebClient webClient, ApiUtils apiUtils) {
         this.webClient = webClient;
+        this.apiUtils = apiUtils;
     }
 
     public NodeDTO getNodeById(String id) throws PrmApiException {
@@ -97,36 +100,28 @@ public class PrmApi {
                 .block();
     }
 
+    public byte[] getAllProvidersRaw() {
+        return this.apiUtils.getRaw(URI.create(this.prmEndpoint + PRM_PROVIDERS_API_BASE_PATH));
+    }
+
     public byte[] getAllNodesRaw() {
-        return this.getRaw(URI.create(this.prmEndpoint + PRM_NODES_API_BASE_PATH));
+        return this.apiUtils.getRaw(URI.create(this.prmEndpoint + PRM_NODES_API_BASE_PATH));
     }
 
     public byte[] getAllLinksRaw() {
-        return this.getRaw(URI.create(this.prmEndpoint + PRM_LINKS_API_BASE_PATH));
+        return this.apiUtils.getRaw(URI.create(this.prmEndpoint + PRM_LINKS_API_BASE_PATH));
     }
 
     public byte[] getAllCpusRaw() {
-        return this.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/cpus"));
+        return this.apiUtils.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/cpus"));
     }
 
     public byte[] getAllMemoryRaw() {
-        return this.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/memory"));
+        return this.apiUtils.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/memory"));
     }
 
     public byte[] getAllStorageRaw() {
-        return this.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/storage"));
-    }
-
-    private byte[] getRaw(URI uri) {
-        return webClient
-                .get()
-                .uri(uri)
-                .retrieve()
-                .bodyToMono(byte[].class)
-                .onErrorResume(e -> {
-                    throw new RuntimeException(new PrmApiException("Failed to get nodes from PRM", e));
-                })
-                .block();
+        return this.apiUtils.getRaw(URI.create(this.prmEndpoint + PRM_RESOURCES_API_BASE_PATH + "/storage"));
     }
 
     public String resolvePnaUuidToGlobalId(String pnaUUID) throws PrmApiException {

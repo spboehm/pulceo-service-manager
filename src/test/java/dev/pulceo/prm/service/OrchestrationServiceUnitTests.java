@@ -48,6 +48,8 @@ public class OrchestrationServiceUnitTests {
     @Test
     public void testCollectAllOrchestrationData() throws OrchestrationServiceException, IOException {
         // given
+        // Mock the behavior of the APIs to return the contents of the JSON files
+        when(this.prmApi.getAllProvidersRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-providers.json"));
         when(this.prmApi.getAllNodesRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-nodes.json"));
         when(this.prmApi.getAllLinksRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-links.json"));
         when(this.prmApi.getAllCpusRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-cpus.json"));

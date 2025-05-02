@@ -205,10 +205,20 @@ public class OrchestrationService {
 
     public void collectDynamicOrchestrationData() throws OrchestrationServiceException {
 
+        // TODO: Metrics
+
+        // TODO: REQUESTS
+
+        // TODO: EVENTS
+
+        // TODO: Task Status Logs
+
     }
 
     public void collectStaticOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
         // TODO: PROVIDERS
+        byte[] providersRaw = this.prmApi.getAllProvidersRaw();
+        this.saveAsJson(providersRaw, "raw", orchestrationUuid.toString(), "PROVIDERS.json");
 
         // NODES
         byte[] nodesRaw = this.prmApi.getAllNodesRaw();
@@ -234,9 +244,8 @@ public class OrchestrationService {
         byte[] applicationsRaw = this.psmApi.getAllApplicationsRaw();
         this.saveAsJson(applicationsRaw, "raw", orchestrationUuid.toString(), "APPLICATIONS.json");
 
-        // TODO: Tasks
-
         // TODO: metrics requests from PSM
+        
 
     }
 

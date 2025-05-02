@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.net.URI;
 
@@ -22,28 +21,16 @@ public class PsmApi {
     private final String PSM_APPLICATIONS_API_BASE_PATH = "/api/v1/applications";
     private final WebClient webClient;
 
+    private final ApiUtils apiUtils;
+
     @Autowired
-    public PsmApi(WebClient webClient) {
+    public PsmApi(WebClient webClient, ApiUtils apiUtils) {
         this.webClient = webClient;
+        this.apiUtils = apiUtils;
     }
 
     public byte[] getAllApplicationsRaw() {
-        return this.getRaw(URI.create(this.psmEndpoint + PSM_APPLICATIONS_API_BASE_PATH));
+        return this.apiUtils.getRaw(URI.create(this.psmEndpoint + PSM_APPLICATIONS_API_BASE_PATH));
     }
 
-    private byte[] getRaw(URI uri) {
-        return webClient
-                .get()
-                .uri(uri)
-                .retrieve()
-                .bodyToMono(byte[].class)
-                .doOnSuccess(response -> {
-                    this.logger.info("Successfully retrieved data from PSM");
-                })
-                .onErrorResume(e -> {
-                    this.logger.error("Error retrieving data from PSM", e);
-                    return Mono.empty();
-                })
-                .block();
-    }
 }
