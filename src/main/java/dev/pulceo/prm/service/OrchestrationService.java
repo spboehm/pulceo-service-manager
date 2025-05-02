@@ -32,18 +32,18 @@ public class OrchestrationService {
     private final OrchestrationContextRepository contextRepository;
     private final PsmApi psmApi;
     private final PrmApi prmApi;
-    private final PmsApi pmsAPI;
+    private final PmsApi pmsApi;
     private final PnaApi pnaApi;
     @Value("${psm.data.dir}")
     private String psmDataDir;
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsApi pmsAPI, PnaApi pnaApi) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsApi pmsApi, PnaApi pnaApi) {
         this.orchestrationRepository = orchestrationRepository;
         this.contextRepository = contextRepository;
         this.psmApi = psmApi;
         this.prmApi = prmApi;
-        this.pmsAPI = pmsAPI;
+        this.pmsApi = pmsApi;
         this.pnaApi = pnaApi;
     }
 
@@ -187,7 +187,7 @@ public class OrchestrationService {
         // reset PRM
         this.prmApi.resetOrchestrationContext();
         // reset PSM
-        this.pmsAPI.resetOrchestrationContext();
+        this.pmsApi.resetOrchestrationContext();
         // TODO: inform about new orchestration context
     }
 
@@ -198,14 +198,28 @@ public class OrchestrationService {
 
         // TODO: static data
         this.collectStaticOrchestrationData(orchestrationContext.getOrchestration().getUuid());
-
-
-        // TODO: get data from PSM and store under raw
     }
 
-    public void collectDynamicOrchestrationData() throws OrchestrationServiceException {
+    public void collectDynamicOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
+        this.createDirsForOrchestrationData(orchestrationUuid);
 
         // TODO: Metrics
+
+        // TODO: CPU Utilization
+        byte[] cpuUtilizationRaw = this.pmsApi.getCpuUtilizationRaw();
+
+        // TODO: Memory Utilization
+
+        // TODO: Storage Utilization
+
+
+        // TODO: Network
+
+        // TODO: ICMP RTT
+
+        // TODO: TCP BW
+
+        // TODO: UDP BW
 
         // TODO: REQUESTS
 
@@ -216,6 +230,7 @@ public class OrchestrationService {
     }
 
     public void collectStaticOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
+        this.createDirsForOrchestrationData(orchestrationUuid);
         // TODO: PROVIDERS
         byte[] providersRaw = this.prmApi.getAllProvidersRaw();
         this.saveAsJson(providersRaw, "raw", orchestrationUuid.toString(), "PROVIDERS.json");
@@ -245,7 +260,7 @@ public class OrchestrationService {
         this.saveAsJson(applicationsRaw, "raw", orchestrationUuid.toString(), "APPLICATIONS.json");
 
         // Metrics Requests
-        byte[] metricsRequestsRaw = this.pmsAPI.getAllMetricRequestsRaw();
+        byte[] metricsRequestsRaw = this.pmsApi.getAllMetricRequestsRaw();
         this.saveAsJson(metricsRequestsRaw, "raw", orchestrationUuid.toString(), "METRICS_REQUESTS.json");
     }
 

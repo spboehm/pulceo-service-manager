@@ -1,5 +1,9 @@
 package dev.pulceo.prm.api;
 
+import dev.pulceo.prm.api.dto.metricexports.MetricExportDTO;
+import dev.pulceo.prm.api.dto.metricexports.MetricExportRequestDTO;
+import dev.pulceo.prm.api.dto.metricexports.MetricExportState;
+import dev.pulceo.prm.api.dto.metricexports.MetricType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +53,89 @@ public class PmsApi {
                     return Mono.empty();
                 })
                 .subscribe();
+    }
+
+    public byte[] getCpuUtilizationRaw() {
+        // create metric export request
+        MetricExportDTO metricExportDTO = this.createMetricExportRequest(MetricExportRequestDTO.builder()
+                .metricType(MetricType.CPU_UTIL)
+                .build());
+
+        // poll the current state of export
+        this.logger.info("Retrieve state of metric export request");
+        MetricExportDTO pendingMetricExportDTO =
+                this.webClient.get()
+                        .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID())
+                        .retrieve()
+                        .bodyToMono(MetricExportDTO.class)
+                        .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
+                        .doOnSuccess(response -> {
+                            this.logger.info("Successfully polled metric export request");
+                        })
+                        .onErrorResume(e -> {
+                            this.logger.error("Failed to poll metric export request: {}", e.getMessage());
+                            return Mono.empty();
+                        })
+                        .block();
+
+        while (pendingMetricExportDTO.getMetricExportState() != MetricExportState.COMPLETED) {
+            this.logger.info("Waiting for metric export to complete...");
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                this.logger.error("Thread interrupted: {}", e.getMessage());
+            }
+            pendingMetricExportDTO =
+                    this.webClient.get()
+                            .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID())
+                            .retrieve()
+                            .bodyToMono(MetricExportDTO.class)
+                            .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
+                            .doOnSuccess(response -> {
+                                this.logger.info("Successfully polled metric export request");
+                            })
+                            .onErrorResume(e -> {
+                                this.logger.error("Failed to poll metric export request: {}", e.getMessage());
+                                return Mono.empty();
+                            })
+                            .block();
+        }
+
+        // download the file
+        this.logger.info("Metric export completed, downloading file...");
+        byte[] file = webClient.get()
+                .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID() + "/blobs/" + pendingMetricExportDTO.getUrl().substring(pendingMetricExportDTO.getUrl().lastIndexOf("/") + 1))
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
+                .doOnSuccess(response -> {
+                    this.logger.info("Successfully downloaded metric export file");
+                })
+                .onErrorResume(e -> {
+                    this.logger.error("Failed to download metric export file: {}", e.getMessage());
+                    return Mono.empty();
+                })
+                .block();
+
+        return new byte[0];
+    }
+
+    private MetricExportDTO createMetricExportRequest(MetricExportRequestDTO metricExportRequestDTO) {
+        this.logger.error("Create metric export request");
+        return webClient.post()
+                .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH)
+                .bodyValue(metricExportRequestDTO)
+                .retrieve()
+                .bodyToMono(MetricExportDTO.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
+                .doOnSuccess(response -> {
+                    this.logger.info("Successfully created metric export request");
+                })
+                .onErrorResume(e -> {
+                    this.logger.error("Failed to create metric export request: {}", e.getMessage());
+                    return Mono.empty();
+                })
+                .block();
     }
 
     public byte[] getAllMetricRequestsRaw() {
