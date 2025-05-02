@@ -1,5 +1,6 @@
 package dev.pulceo.prm.service;
 
+import dev.pulceo.prm.api.PmsApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 
@@ -30,6 +32,9 @@ public class OrchestrationServiceUnitTests {
 
     @Mock
     private PsmApi psmApi;
+
+    @Mock
+    private PmsApi pmsApi;
 
     @Mock
     private OrchestrationContextRepository orchestrationContextRepository;
@@ -56,6 +61,7 @@ public class OrchestrationServiceUnitTests {
         when(this.prmApi.getAllMemoryRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-memory.json"));
         when(this.prmApi.getAllStorageRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-storage.json"));
         when(this.psmApi.getAllApplicationsRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/psmapi-get-all-applications.json"));
+        when(this.pmsApi.getAllMetricRequestsRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-metric-requests.json"));
 
         when(this.orchestrationContextRepository.findById(1L)).thenReturn(Optional.of(
                 OrchestrationContext.builder()
@@ -72,7 +78,18 @@ public class OrchestrationServiceUnitTests {
         this.orchestrationService.collectAllOrchestrationData();
 
         // then
-
+        OrchestrationContext orchestrationContext = this.orchestrationContextRepository.findById(1L).orElseThrow();
+        UUID orchestrationContextId = orchestrationContext.getOrchestration().getUuid();
+        // Assert that all expected files have been created
+        Path basePath = Path.of("/tmp/psm-data/raw", orchestrationContextId.toString());
+        assert Files.exists(basePath.resolve("PROVIDERS.json"));
+        assert Files.exists(basePath.resolve("NODES.json"));
+        assert Files.exists(basePath.resolve("LINKS.json"));
+        assert Files.exists(basePath.resolve("CPUS.json"));
+        assert Files.exists(basePath.resolve("MEMORY.json"));
+        assert Files.exists(basePath.resolve("STORAGE.json"));
+        assert Files.exists(basePath.resolve("APPLICATIONS.json"));
+        assert Files.exists(basePath.resolve("METRICS_REQUESTS.json"));
     }
 
     public byte[] readFileToBytes(String filePath) throws IOException {

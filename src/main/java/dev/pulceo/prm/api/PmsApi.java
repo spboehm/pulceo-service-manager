@@ -9,15 +9,17 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.net.URI;
 import java.time.Duration;
 
 @Component
-public class PmsAPI {
+public class PmsApi {
 
-    private final Logger logger = LoggerFactory.getLogger(PmsAPI.class);
+    private final Logger logger = LoggerFactory.getLogger(PmsApi.class);
     @Value("${pms.endpoint}")
     private String pmsEndpoint;
     private final WebClient webClient;
+    private final String PMS_METRIC_REQUESTS_API_BASE_PATH = "/api/v1/metric-requests";
     private final String PMS_METRIC_EXPORTS_API_BASE_PATH = "/api/v1/metric-exports";
     private final String PMS_ORCHESTRATION_CONTEXT_API_BASE_PATH = "/api/v1/orchestration-context";
     @Value("${webclient.scheme}")
@@ -26,7 +28,7 @@ public class PmsAPI {
     private final ApiUtils apiUtils;
 
     @Autowired
-    public PmsAPI(WebClient webClient, ApiUtils apiUtils) {
+    public PmsApi(WebClient webClient, ApiUtils apiUtils) {
         this.webClient = webClient;
         this.apiUtils = apiUtils;
     }
@@ -47,6 +49,10 @@ public class PmsAPI {
                     return Mono.empty();
                 })
                 .subscribe();
+    }
+
+    public byte[] getAllMetricRequestsRaw() {
+        return this.apiUtils.getRaw(URI.create(this.pmsEndpoint + PMS_METRIC_REQUESTS_API_BASE_PATH));
     }
 
 

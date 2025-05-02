@@ -1,6 +1,6 @@
 package dev.pulceo.prm.service;
 
-import dev.pulceo.prm.api.PmsAPI;
+import dev.pulceo.prm.api.PmsApi;
 import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
@@ -32,13 +32,13 @@ public class OrchestrationService {
     private final OrchestrationContextRepository contextRepository;
     private final PsmApi psmApi;
     private final PrmApi prmApi;
-    private final PmsAPI pmsAPI;
+    private final PmsApi pmsAPI;
     private final PnaApi pnaApi;
     @Value("${psm.data.dir}")
     private String psmDataDir;
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsAPI pmsAPI, PnaApi pnaApi) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsApi pmsAPI, PnaApi pnaApi) {
         this.orchestrationRepository = orchestrationRepository;
         this.contextRepository = contextRepository;
         this.psmApi = psmApi;
@@ -244,9 +244,9 @@ public class OrchestrationService {
         byte[] applicationsRaw = this.psmApi.getAllApplicationsRaw();
         this.saveAsJson(applicationsRaw, "raw", orchestrationUuid.toString(), "APPLICATIONS.json");
 
-        // TODO: metrics requests from PSM
-        
-
+        // Metrics Requests
+        byte[] metricsRequestsRaw = this.pmsAPI.getAllMetricRequestsRaw();
+        this.saveAsJson(metricsRequestsRaw, "raw", orchestrationUuid.toString(), "METRICS_REQUESTS.json");
     }
 
     public void saveAsJson(byte[] raw, String subfolder, String orchestrationUuid, String fileName) throws OrchestrationServiceException {
