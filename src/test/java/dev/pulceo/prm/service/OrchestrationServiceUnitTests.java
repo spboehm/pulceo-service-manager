@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,14 +83,14 @@ public class OrchestrationServiceUnitTests {
         UUID orchestrationContextId = orchestrationContext.getOrchestration().getUuid();
         // Assert that all expected files have been created
         Path basePath = Path.of("/tmp/psm-data/raw", orchestrationContextId.toString());
-        assert Files.exists(basePath.resolve("PROVIDERS.json"));
-        assert Files.exists(basePath.resolve("NODES.json"));
-        assert Files.exists(basePath.resolve("LINKS.json"));
-        assert Files.exists(basePath.resolve("CPUS.json"));
-        assert Files.exists(basePath.resolve("MEMORY.json"));
-        assert Files.exists(basePath.resolve("STORAGE.json"));
-        assert Files.exists(basePath.resolve("APPLICATIONS.json"));
-        assert Files.exists(basePath.resolve("METRICS_REQUESTS.json"));
+        assertTrue(Files.exists(basePath.resolve("PROVIDERS.json")));
+        assertTrue(Files.exists(basePath.resolve("NODES.json")));
+        assertTrue(Files.exists(basePath.resolve("LINKS.json")));
+        assertTrue(Files.exists(basePath.resolve("CPUS.json")));
+        assertTrue(Files.exists(basePath.resolve("MEMORY.json")));
+        assertTrue(Files.exists(basePath.resolve("STORAGE.json")));
+        assertTrue(Files.exists(basePath.resolve("APPLICATIONS.json")));
+        assertTrue(Files.exists(basePath.resolve("METRICS_REQUESTS.json")));
     }
 
     public byte[] readFileToBytes(String filePath) throws IOException {
