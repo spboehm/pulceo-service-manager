@@ -8,7 +8,6 @@ import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
 import dev.pulceo.prm.repository.OrchestrationContextRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -90,7 +89,6 @@ public class OrchestrationServiceUnitTests {
     }
 
     @Test
-    @Disabled
     public void testCollectDynamicOrchestrationData() throws OrchestrationServiceException, IOException {
         // given
         when(this.orchestrationContextRepository.findById(1L)).thenReturn(Optional.of(
@@ -103,6 +101,7 @@ public class OrchestrationServiceUnitTests {
                                         .properties(Map.of("key1", "value1", "key2", "value2"))
                                         .build())
                         .build()));
+        when(this.pmsApi.getAllCpuUtilizationRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-cpu-utilization.csv"));
 
         OrchestrationContext orchestrationContext = this.orchestrationContextRepository.findById(1L).orElseThrow();
         UUID orchestrationUuid = orchestrationContext.getOrchestration().getUuid();

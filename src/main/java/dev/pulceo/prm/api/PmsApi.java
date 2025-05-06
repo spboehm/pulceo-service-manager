@@ -55,7 +55,7 @@ public class PmsApi {
                 .subscribe();
     }
 
-    public byte[] getCpuUtilizationRaw() {
+    public byte[] getAllCpuUtilizationRaw() {
         // create metric export request
         MetricExportDTO metricExportDTO = this.createMetricExportRequest(MetricExportRequestDTO.builder()
                 .metricType(MetricType.CPU_UTIL)
@@ -141,6 +141,5 @@ public class PmsApi {
     public byte[] getAllMetricRequestsRaw() {
         return this.apiUtils.getRaw(URI.create(this.pmsEndpoint + PMS_METRIC_REQUESTS_API_BASE_PATH));
     }
-
-
+    
 }

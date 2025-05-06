@@ -206,12 +206,12 @@ public class OrchestrationService {
         // TODO: Metrics
 
         // TODO: CPU Utilization
-        byte[] cpuUtilizationRaw = this.pmsApi.getCpuUtilizationRaw();
+        byte[] cpuUtilizationRaw = this.pmsApi.getAllCpuUtilizationRaw();
+        this.saveAsJson(cpuUtilizationRaw, "raw", orchestrationUuid.toString(), "CPU_UTIL.csv");
 
         // TODO: Memory Utilization
 
         // TODO: Storage Utilization
-
 
         // TODO: Network
 
