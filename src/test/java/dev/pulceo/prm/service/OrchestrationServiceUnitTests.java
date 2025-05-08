@@ -101,7 +101,7 @@ public class OrchestrationServiceUnitTests {
                                         .properties(Map.of("key1", "value1", "key2", "value2"))
                                         .build())
                         .build()));
-        when(this.pmsApi.getAllCpuUtilizationRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-cpu-utilization.csv"));
+        //when(this.pmsApi.requestAllCpuUtilizationRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-cpu-utilization.csv"));
 
         OrchestrationContext orchestrationContext = this.orchestrationContextRepository.findById(1L).orElseThrow();
         UUID orchestrationUuid = orchestrationContext.getOrchestration().getUuid();

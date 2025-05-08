@@ -4,6 +4,8 @@ import dev.pulceo.prm.api.dto.metricexports.MetricExportDTO;
 import dev.pulceo.prm.api.dto.metricexports.MetricExportRequestDTO;
 import dev.pulceo.prm.api.dto.metricexports.MetricExportState;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
+import dev.pulceo.prm.api.exception.PmsApiException;
+import dev.pulceo.prm.api.exception.ResourceNotReadyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,10 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.UUID;
 
 @Component
 public class PmsApi {
@@ -28,8 +33,10 @@ public class PmsApi {
     private final String PMS_ORCHESTRATION_CONTEXT_API_BASE_PATH = "/api/v1/orchestration-context";
     @Value("${webclient.scheme}")
     private String webClientScheme;
-
     private final ApiUtils apiUtils;
+    // TODO: add directory where files are stored
+    @Value("${pulceo.data.dir}")
+    private String pulceoDataDir;
 
     @Autowired
     public PmsApi(WebClient webClient, ApiUtils apiUtils) {
@@ -55,73 +62,57 @@ public class PmsApi {
                 .subscribe();
     }
 
-    public byte[] getAllCpuUtilizationRaw() {
+    public void requestAllCpuUtilizationRaw(UUID orchestrationUuid) throws PmsApiException {
         // create metric export request
         MetricExportDTO metricExportDTO = this.createMetricExportRequest(MetricExportRequestDTO.builder()
                 .metricType(MetricType.CPU_UTIL)
                 .build());
 
-        // poll the current state of export
-        this.logger.info("Retrieve state of metric export request");
-        MetricExportDTO pendingMetricExportDTO =
-                this.webClient.get()
-                        .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID())
-                        .retrieve()
-                        .bodyToMono(MetricExportDTO.class)
-                        .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
-                        .doOnSuccess(response -> {
-                            this.logger.info("Successfully polled metric export request");
-                        })
-                        .onErrorResume(e -> {
-                            this.logger.error("Failed to poll metric export request: {}", e.getMessage());
-                            return Mono.empty();
-                        })
-                        .block();
-
-        while (pendingMetricExportDTO.getMetricExportState() != MetricExportState.COMPLETED) {
-            this.logger.info("Waiting for metric export to complete...");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                this.logger.error("Thread interrupted: {}", e.getMessage());
-            }
-            pendingMetricExportDTO =
-                    this.webClient.get()
-                            .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID())
-                            .retrieve()
-                            .bodyToMono(MetricExportDTO.class)
-                            .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
-                            .doOnSuccess(response -> {
-                                this.logger.info("Successfully polled metric export request");
-                            })
-                            .onErrorResume(e -> {
-                                this.logger.error("Failed to poll metric export request: {}", e.getMessage());
-                                return Mono.empty();
-                            })
-                            .block();
-        }
-
-        // download the file
-        this.logger.info("Metric export completed, downloading file...");
-        byte[] file = webClient.get()
-                .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID() + "/blobs/" + pendingMetricExportDTO.getUrl().substring(pendingMetricExportDTO.getUrl().lastIndexOf("/") + 1))
+        // wait for completion
+        this.logger.info("Waiting for metric export with uuid={} to complete...", metricExportDTO.getMetricExportUUID());
+        this.webClient.get()
+                .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID())
                 .retrieve()
-                .bodyToMono(byte[].class)
-                .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
-                .doOnSuccess(response -> {
-                    this.logger.info("Successfully downloaded metric export file");
+                .bodyToMono(MetricExportDTO.class)
+                .flatMap(currentMetricExportDTO -> {
+                    if (currentMetricExportDTO.getMetricExportState() == MetricExportState.COMPLETED) {
+                        return Mono.just(currentMetricExportDTO);
+                    } else {
+                        return Mono.error(new ResourceNotReadyException("Metric export with uuid=%s is not ready yet".formatted(currentMetricExportDTO.getMetricExportUUID())));
+                    }
+                })
+                .retryWhen(Retry.backoff(5, Duration.ofSeconds(10))
+                        .filter(throwable -> throwable instanceof ResourceNotReadyException))
+                .doOnSuccess(completedMetricExportDTO -> {
+                    this.logger.info("Successfully polled metric export request with uuid={}", completedMetricExportDTO.getMetricExportUUID());
+                    if (completedMetricExportDTO.getMetricExportState() == MetricExportState.COMPLETED) {
+                        this.logger.info("Metric export request with uuid={} completed", completedMetricExportDTO.getMetricExportUUID());
+                    } else {
+                        this.logger.info("Metric export request with uuid={} is still pending", completedMetricExportDTO.getMetricExportUUID());
+                    }
                 })
                 .onErrorResume(e -> {
-                    this.logger.error("Failed to download metric export file: {}", e.getMessage());
+                    this.logger.error("Failed to poll metric export request: {}", e.getMessage());
                     return Mono.empty();
                 })
                 .block();
 
-        return new byte[0];
+        if (checkIfRequestedFileExists(orchestrationUuid)) {
+            this.logger.info("Requested file exists");
+        } else {
+            this.logger.error("Failed to retrieve requested file");
+            throw new PmsApiException("Failed to retrieve requested file");
+        }
+    }
+
+    private boolean checkIfRequestedFileExists(UUID orchestrationUuid) {
+        this.logger.info("Check if requested file exists...");
+        Path filePath = Path.of(this.pulceoDataDir, "raw", orchestrationUuid.toString(), "CPU_UTIL.csv");
+        return Files.exists(filePath);
     }
 
     private MetricExportDTO createMetricExportRequest(MetricExportRequestDTO metricExportRequestDTO) {
-        this.logger.error("Create metric export request");
+        this.logger.info("Create metric export request");
         return webClient.post()
                 .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH)
                 .bodyValue(metricExportRequestDTO)
@@ -141,5 +132,5 @@ public class PmsApi {
     public byte[] getAllMetricRequestsRaw() {
         return this.apiUtils.getRaw(URI.create(this.pmsEndpoint + PMS_METRIC_REQUESTS_API_BASE_PATH));
     }
-    
+
 }

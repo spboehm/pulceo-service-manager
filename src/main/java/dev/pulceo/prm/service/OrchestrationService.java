@@ -4,6 +4,7 @@ import dev.pulceo.prm.api.PmsApi;
 import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
+import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -203,29 +205,33 @@ public class OrchestrationService {
     public void collectDynamicOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
         this.createDirsForOrchestrationData(orchestrationUuid);
 
-        // TODO: Metrics
+        try {
+            // TODO: CPU Utilization
+            this.pmsApi.requestAllCpuUtilizationRaw(orchestrationUuid);
 
-        // TODO: CPU Utilization
-        byte[] cpuUtilizationRaw = this.pmsApi.getAllCpuUtilizationRaw();
-        this.saveAsJson(cpuUtilizationRaw, "raw", orchestrationUuid.toString(), "CPU_UTIL.csv");
+            // TODO: Memory Utilization
 
-        // TODO: Memory Utilization
+            // TODO: Storage Utilization
 
-        // TODO: Storage Utilization
+            // TODO: Network
 
-        // TODO: Network
+            // TODO: ICMP RTT
 
-        // TODO: ICMP RTT
+            // TODO: TCP BW
 
-        // TODO: TCP BW
+            // TODO: UDP BW
 
-        // TODO: UDP BW
+            // TODO: REQUESTS
 
-        // TODO: REQUESTS
+            // TODO: EVENTS
 
-        // TODO: EVENTS
+            // TODO: Task Status Logs
 
-        // TODO: Task Status Logs
+        } catch (PmsApiException e) {
+            this.logger.error("Failed to collect dynamic orchestration data", e);
+            throw new OrchestrationServiceException("Failed to collect dynamic orchestration data", e);
+        }
+
 
     }
 
@@ -298,6 +304,20 @@ public class OrchestrationService {
             logger.error("Could not create PMS data directory", e);
             throw new OrchestrationServiceException("Could not create PMS data directory", e);
         }
+    }
+
+    /* Report methods */
+    @Async
+    public void createReport(UUID orchestrationUUID) throws OrchestrationServiceException {
+        logger.info("Creating report for orchestration with uuid={}", orchestrationUUID);
+        // TODO: retrieve data from PSM
+
+        // TODO: static
+
+        // TODO: dynamic
+        this.collectDynamicOrchestrationData(orchestrationUUID);
+
+        // TODO: create report with psm
     }
 
     @PostConstruct

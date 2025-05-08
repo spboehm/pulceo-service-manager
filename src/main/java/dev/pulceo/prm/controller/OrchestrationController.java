@@ -54,6 +54,19 @@ public class OrchestrationController {
         }
     }
 
+    @PostMapping
+    @RequestMapping("/{id}/reports")
+    public ResponseEntity<Void> createReport(@PathVariable String id) throws OrchestrationServiceException {
+        Optional<Orchestration> orchestration = this.resolveOrchestration(id);
+        if (orchestration.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        } else {
+            this.orchestrationService.createReport(orchestration.get().getUuid());
+            // TODO: handle return for orchestration report
+            return ResponseEntity.status(201).build();
+        }
+    }
+
     private Optional<Orchestration> resolveOrchestration(String id) {
         if (checkIfUUID(id)) {
             return this.orchestrationService.readOrchestrationWithPropertiesByUUID(UUID.fromString(id));
