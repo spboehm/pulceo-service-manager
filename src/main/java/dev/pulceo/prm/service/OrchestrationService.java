@@ -4,6 +4,7 @@ import dev.pulceo.prm.api.PmsApi;
 import dev.pulceo.prm.api.PnaApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
+import dev.pulceo.prm.api.dto.metricexports.MetricType;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
@@ -203,36 +204,28 @@ public class OrchestrationService {
     }
 
     public void collectDynamicOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
+        this.logger.info("Collecting dynamic orchestration data for orchestration with uuid={}", orchestrationUuid);
         this.createDirsForOrchestrationData(orchestrationUuid);
 
         try {
             // TODO: CPU Utilization
-            this.pmsApi.requestAllCpuUtilizationRaw(orchestrationUuid);
-
             // TODO: Memory Utilization
-
             // TODO: Storage Utilization
-
             // TODO: Network
-
             // TODO: ICMP RTT
-
             // TODO: TCP BW
-
             // TODO: UDP BW
-
             // TODO: REQUESTS
-
             // TODO: EVENTS
+            for (MetricType metricType : MetricType.values()) {
+                this.pmsApi.requestMetric(orchestrationUuid, metricType);
+            }
 
             // TODO: Task Status Logs
-
         } catch (PmsApiException e) {
             this.logger.error("Failed to collect dynamic orchestration data", e);
             throw new OrchestrationServiceException("Failed to collect dynamic orchestration data", e);
         }
-
-
     }
 
     public void collectStaticOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {

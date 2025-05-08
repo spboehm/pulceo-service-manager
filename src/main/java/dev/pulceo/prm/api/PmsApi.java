@@ -62,10 +62,10 @@ public class PmsApi {
                 .subscribe();
     }
 
-    public void requestAllCpuUtilizationRaw(UUID orchestrationUuid) throws PmsApiException {
+    public void requestMetric(UUID orchestrationUuid, MetricType metricType) throws PmsApiException {
         // create metric export request
         MetricExportDTO metricExportDTO = this.createMetricExportRequest(MetricExportRequestDTO.builder()
-                .metricType(MetricType.CPU_UTIL)
+                .metricType(metricType)
                 .build());
 
         // wait for completion
@@ -97,7 +97,7 @@ public class PmsApi {
                 })
                 .block();
 
-        if (checkIfRequestedFileExists(orchestrationUuid)) {
+        if (checkIfRequestedFileExists(orchestrationUuid, metricType)) {
             this.logger.info("Requested file exists");
         } else {
             this.logger.error("Failed to retrieve requested file");
@@ -105,9 +105,9 @@ public class PmsApi {
         }
     }
 
-    private boolean checkIfRequestedFileExists(UUID orchestrationUuid) {
+    private boolean checkIfRequestedFileExists(UUID orchestrationUuid, MetricType metricType) {
         this.logger.info("Check if requested file exists...");
-        Path filePath = Path.of(this.pulceoDataDir, "raw", orchestrationUuid.toString(), "CPU_UTIL.csv");
+        Path filePath = Path.of(this.pulceoDataDir, "raw", orchestrationUuid.toString(), metricType + ".csv");
         return Files.exists(filePath);
     }
 

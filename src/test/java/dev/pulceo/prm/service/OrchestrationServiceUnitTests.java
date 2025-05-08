@@ -3,6 +3,7 @@ package dev.pulceo.prm.service;
 import dev.pulceo.prm.api.PmsApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
+import dev.pulceo.prm.api.dto.metricexports.MetricType;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
@@ -120,8 +121,7 @@ public class OrchestrationServiceUnitTests {
                     );
                     return null;
                 }
-        ).when(this.pmsApi).requestAllCpuUtilizationRaw(orchestrationUuid);
-
+        ).when(this.pmsApi).requestMetric(orchestrationUuid, MetricType.CPU_UTIL);
 
         // when
         this.orchestrationService.collectDynamicOrchestrationData(orchestrationUuid);
