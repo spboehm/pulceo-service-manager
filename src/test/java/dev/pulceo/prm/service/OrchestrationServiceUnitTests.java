@@ -3,6 +3,7 @@ package dev.pulceo.prm.service;
 import dev.pulceo.prm.api.PmsApi;
 import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
+import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -18,11 +19,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,7 +92,7 @@ public class OrchestrationServiceUnitTests {
     }
 
     @Test
-    public void testCollectDynamicOrchestrationData() throws OrchestrationServiceException, IOException {
+    public void testCollectDynamicOrchestrationData() throws OrchestrationServiceException, IOException, PmsApiException {
         // given
         when(this.orchestrationContextRepository.findById(1L)).thenReturn(Optional.of(
                 OrchestrationContext.builder()
@@ -101,10 +104,24 @@ public class OrchestrationServiceUnitTests {
                                         .properties(Map.of("key1", "value1", "key2", "value2"))
                                         .build())
                         .build()));
-        //when(this.pmsApi.requestAllCpuUtilizationRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-cpu-utilization.csv"));
 
         OrchestrationContext orchestrationContext = this.orchestrationContextRepository.findById(1L).orElseThrow();
         UUID orchestrationUuid = orchestrationContext.getOrchestration().getUuid();
+
+        doAnswer(
+                invocation -> {
+                    // Simulate the behavior of the requestAllCpuUtilizationRaw method
+                    Path basePath = Path.of("/tmp/psm-data/raw", orchestrationUuid.toString());
+                    Files.createDirectories(basePath);
+                    Files.copy(
+                            Path.of("src/test/resources/__files/api/pmsapi-get-all-cpu-utilization.csv"),
+                            basePath.resolve("CPU_UTIL.csv"),
+                            StandardCopyOption.REPLACE_EXISTING
+                    );
+                    return null;
+                }
+        ).when(this.pmsApi).requestAllCpuUtilizationRaw(orchestrationUuid);
+
 
         // when
         this.orchestrationService.collectDynamicOrchestrationData(orchestrationUuid);
