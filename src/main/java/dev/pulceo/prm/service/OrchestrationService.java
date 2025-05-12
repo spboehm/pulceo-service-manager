@@ -6,6 +6,8 @@ import dev.pulceo.prm.api.PrmApi;
 import dev.pulceo.prm.api.PsmApi;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
 import dev.pulceo.prm.api.exception.PmsApiException;
+import dev.pulceo.prm.api.exception.PrmApiException;
+import dev.pulceo.prm.api.exception.PsmApiException;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -26,6 +28,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class OrchestrationService {
@@ -39,6 +43,7 @@ public class OrchestrationService {
     private final PnaApi pnaApi;
     @Value("${psm.data.dir}")
     private String psmDataDir;
+    private final Lock reportCreationLock = new ReentrantLock();
 
     @Autowired
     public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsApi pmsApi, PnaApi pnaApi) {
@@ -194,84 +199,50 @@ public class OrchestrationService {
         // TODO: inform about new orchestration context
     }
 
-    public void collectAllOrchestrationData() throws OrchestrationServiceException {
-        OrchestrationContext orchestrationContext = this.getOrCreateOrchestrationContext();
-        // create dirs for orchestration data
-        this.createDirsForOrchestrationData(orchestrationContext.getOrchestration().getUuid());
+    public void collectDynamicOrchestrationData(UUID orchestrationUuid, boolean cleanUp) throws OrchestrationServiceException {
+        if (this.reportCreationLock.tryLock()) {
+            try {
+                this.logger.info("Collecting dynamic orchestration data for orchestration with uuid={}", orchestrationUuid);
+                this.createDirsForOrchestrationData(orchestrationUuid);
 
-        // TODO: static data
-        this.collectStaticOrchestrationData(orchestrationContext.getOrchestration().getUuid());
-    }
-
-    public void collectDynamicOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
-        this.logger.info("Collecting dynamic orchestration data for orchestration with uuid={}", orchestrationUuid);
-        this.createDirsForOrchestrationData(orchestrationUuid);
-
-        try {
-            // TODO: CPU Utilization
-            // TODO: Memory Utilization
-            // TODO: Storage Utilization
-            // TODO: Network
-            // TODO: ICMP RTT
-            // TODO: TCP BW
-            // TODO: UDP BW
-            // TODO: REQUESTS
-            // TODO: EVENTS
-            for (MetricType metricType : MetricType.values()) {
-                this.pmsApi.requestMetric(orchestrationUuid, metricType);
+                try {
+                    for (MetricType metricType : MetricType.values()) {
+                        this.pmsApi.requestMetric(orchestrationUuid, metricType, cleanUp);
+                    }
+                    // TODO: Task Status Logs
+                } catch (PmsApiException e) {
+                    this.logger.error("Failed to collect dynamic orchestration data", e);
+                    throw new OrchestrationServiceException("Failed to collect dynamic orchestration data", e);
+                }
+                this.logger.info("Collecting dynamic orchestration data for orchestrationUuid={} successfully completed", orchestrationUuid);
+            } finally {
+                this.reportCreationLock.unlock();
             }
-
-            // TODO: Task Status Logs
-        } catch (PmsApiException e) {
-            this.logger.error("Failed to collect dynamic orchestration data", e);
-            throw new OrchestrationServiceException("Failed to collect dynamic orchestration data", e);
+        } else {
+            this.logger.warn("Dynamic orchestration data collection is already in progress for orchestration with uuid={}", orchestrationUuid);
+            throw new OrchestrationServiceException("Dynamic orchestration data collection is already in progress for orchestration with uuid=%s".formatted(orchestrationUuid));
         }
     }
 
-    public void collectStaticOrchestrationData(UUID orchestrationUuid) throws OrchestrationServiceException {
-        this.createDirsForOrchestrationData(orchestrationUuid);
-        // TODO: PROVIDERS
-        byte[] providersRaw = this.prmApi.getAllProvidersRaw();
-        this.saveAsJson(providersRaw, "raw", orchestrationUuid.toString(), "PROVIDERS.json");
+    public void collectStaticOrchestrationData(UUID orchestrationUuid, boolean cleanUp) throws OrchestrationServiceException {
+        if (this.reportCreationLock.tryLock()) {
+            try {
+                this.createDirsForOrchestrationData(orchestrationUuid);
 
-        // NODES
-        byte[] nodesRaw = this.prmApi.getAllNodesRaw();
-        this.saveAsJson(nodesRaw, "raw", orchestrationUuid.toString(), "NODES.json");
-
-        // LINKS
-        byte[] linksRaw = this.prmApi.getAllLinksRaw();
-        this.saveAsJson(linksRaw, "raw", orchestrationUuid.toString(), "LINKS.json");
-
-        // CPUS
-        byte[] cpusRaw = this.prmApi.getAllCpusRaw();
-        this.saveAsJson(cpusRaw, "raw", orchestrationUuid.toString(), "CPUS.json");
-
-        // MEMORY
-        byte[] memoryRaw = this.prmApi.getAllMemoryRaw();
-        this.saveAsJson(memoryRaw, "raw", orchestrationUuid.toString(), "MEMORY.json");
-
-        // STORAGE
-        byte[] storageRaw = this.prmApi.getAllStorageRaw();
-        this.saveAsJson(storageRaw, "raw", orchestrationUuid.toString(), "STORAGE.json");
-
-        // Applications
-        byte[] applicationsRaw = this.psmApi.getAllApplicationsRaw();
-        this.saveAsJson(applicationsRaw, "raw", orchestrationUuid.toString(), "APPLICATIONS.json");
-
-        // Metrics Requests
-        byte[] metricsRequestsRaw = this.pmsApi.getAllMetricRequestsRaw();
-        this.saveAsJson(metricsRequestsRaw, "raw", orchestrationUuid.toString(), "METRICS_REQUESTS.json");
-    }
-
-    public void saveAsJson(byte[] raw, String subfolder, String orchestrationUuid, String fileName) throws OrchestrationServiceException {
-        try {
-            Path filePath = Path.of(this.psmDataDir, subfolder, orchestrationUuid, fileName);
-            Files.write(filePath, raw); // Write the raw data to the file
-            this.logger.info("Saved raw data to {}", filePath);
-        } catch (IOException e) {
-            this.logger.error("Failed to save raw data to {}/{}", subfolder, fileName, e);
-            throw new OrchestrationServiceException("Failed to save raw data", e);
+                this.prmApi.collectStaticOrchestrationData(orchestrationUuid, cleanUp);
+                this.psmApi.collectStaticOrchestrationData(orchestrationUuid, cleanUp);
+                this.pmsApi.collectStaticOrchestrationData(orchestrationUuid, cleanUp);
+            } catch (PrmApiException | PsmApiException | PmsApiException e) {
+                this.logger.error("Failed to collect static orchestration data", e);
+                throw new OrchestrationServiceException("Failed to collect static orchestration data", e);
+            } finally {
+                this.reportCreationLock.unlock();
+            }
+        } else {
+            this.logger.warn("Static orchestration data collection is already in progress for orchestration with uuid={}", orchestrationUuid);
+            throw new OrchestrationServiceException("Static orchestration data collection is already in progress for orchestration with uuid=%s".formatted(orchestrationUuid));
         }
+
     }
 
     private void createDirsForOrchestrationData(UUID orchestrationUUID) {
@@ -281,7 +252,7 @@ public class OrchestrationService {
             Files.createDirectories(Path.of(this.psmDataDir, "plots", orchestrationUUID.toString()));
             Files.createDirectories(Path.of(this.psmDataDir, "latex", orchestrationUUID.toString()));
             Files.createDirectories(Path.of(this.psmDataDir, "reports", orchestrationUUID.toString()));
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Could not create directories for orchestration data", e);
         }
     }
@@ -301,16 +272,29 @@ public class OrchestrationService {
 
     /* Report methods */
     @Async
-    public void createReport(UUID orchestrationUUID) throws OrchestrationServiceException {
+    public void createReport(UUID orchestrationUUID, boolean cleanUp) throws OrchestrationServiceException {
         logger.info("Creating report for orchestration with uuid={}", orchestrationUUID);
-        // TODO: retrieve data from PSM
 
-        // TODO: static
+        if (this.reportCreationLock.tryLock()) {
+            try {
+                // TODO: retrieve data from PSM
 
-        // TODO: dynamic
-        this.collectDynamicOrchestrationData(orchestrationUUID);
+                // TODO: static
+                this.collectStaticOrchestrationData(orchestrationUUID, cleanUp);
 
-        // TODO: create report with psm
+                // TODO: dynamic
+                this.collectDynamicOrchestrationData(orchestrationUUID, cleanUp);
+
+                // TODO: create report with psm
+
+            } finally {
+                this.reportCreationLock.unlock();
+            }
+        } else {
+            logger.warn("Report creation is already in progress for orchestration with uuid={}", orchestrationUUID);
+            throw new OrchestrationServiceException("Report creation is already in progress for orchestration with uuid=%s".formatted(orchestrationUUID));
+        }
+
     }
 
     @PostConstruct

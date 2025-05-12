@@ -4,8 +4,10 @@ import dev.pulceo.prm.api.dto.metricexports.MetricExportDTO;
 import dev.pulceo.prm.api.dto.metricexports.MetricExportRequestDTO;
 import dev.pulceo.prm.api.dto.metricexports.MetricExportState;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
+import dev.pulceo.prm.api.dto.resource.PmsResources;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.api.exception.ResourceNotReadyException;
+import dev.pulceo.prm.util.FileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +39,13 @@ public class PmsApi {
     // TODO: add directory where files are stored
     @Value("${pulceo.data.dir}")
     private String pulceoDataDir;
+    private final FileManager fileManager;
 
     @Autowired
-    public PmsApi(WebClient webClient, ApiUtils apiUtils) {
+    public PmsApi(WebClient webClient, ApiUtils apiUtils, FileManager fileManager) {
         this.webClient = webClient;
         this.apiUtils = apiUtils;
+        this.fileManager = fileManager;
     }
 
     public void resetOrchestrationContext() {
@@ -62,14 +66,30 @@ public class PmsApi {
                 .subscribe();
     }
 
-    public void requestMetric(UUID orchestrationUuid, MetricType metricType) throws PmsApiException {
+    public void requestMetric(UUID orchestrationUuid, MetricType metricType, boolean cleanUp) throws PmsApiException {
+        this.logger.info("Request metric with orchestrationUuid={}, metricType={} and cleanUp={}", orchestrationUuid, metricType, cleanUp);
+        boolean requestedFileExists = this.checkIfRequestedFileExists(orchestrationUuid, metricType);
+        if (requestedFileExists) {
+            if (!cleanUp) {
+                return;
+            }
+        }
+        this.requestMetric(orchestrationUuid, metricType);
+    }
+
+    private void requestMetric(UUID orchestrationUuid, MetricType metricType) throws PmsApiException {
         // create metric export request
         MetricExportDTO metricExportDTO = this.createMetricExportRequest(MetricExportRequestDTO.builder()
                 .metricType(metricType)
                 .build());
 
+        if (metricExportDTO == null) {
+            this.logger.error("Failed to create metric export request with uuid={} and metricType={}", orchestrationUuid, metricType);
+            throw new PmsApiException("Failed to create metric export request with uuid=%s and metricType=%s".formatted(orchestrationUuid, metricType));
+        }
+
         // wait for completion
-        this.logger.info("Waiting for metric export with uuid={} to complete...", metricExportDTO.getMetricExportUUID());
+        this.logger.info("Waiting for metric export with uuid={} to complete", metricExportDTO.getMetricExportUUID());
         this.webClient.get()
                 .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH + "/" + metricExportDTO.getMetricExportUUID())
                 .retrieve()
@@ -98,21 +118,21 @@ public class PmsApi {
                 .block();
 
         if (checkIfRequestedFileExists(orchestrationUuid, metricType)) {
-            this.logger.info("Requested file exists");
+            this.logger.info("Requested file for orchestrationUuid={} metricType={} exists", orchestrationUuid, metricType);
         } else {
-            this.logger.error("Failed to retrieve requested file");
+            this.logger.error("Failed to retrieve requested file orchestrationUuid={} metricType={} exists", orchestrationUuid, metricType);
             throw new PmsApiException("Failed to retrieve requested file");
         }
     }
 
     private boolean checkIfRequestedFileExists(UUID orchestrationUuid, MetricType metricType) {
-        this.logger.info("Check if requested file exists...");
         Path filePath = Path.of(this.pulceoDataDir, "raw", orchestrationUuid.toString(), metricType + ".csv");
+        this.logger.info("Check if requested file={} exists", filePath);
         return Files.exists(filePath);
     }
 
     private MetricExportDTO createMetricExportRequest(MetricExportRequestDTO metricExportRequestDTO) {
-        this.logger.info("Create metric export request");
+        this.logger.info("Create metric export request with payload: {}", metricExportRequestDTO);
         return webClient.post()
                 .uri(this.pmsEndpoint + this.PMS_METRIC_EXPORTS_API_BASE_PATH)
                 .bodyValue(metricExportRequestDTO)
@@ -120,7 +140,7 @@ public class PmsApi {
                 .bodyToMono(MetricExportDTO.class)
                 .retryWhen(Retry.backoff(3, Duration.ofSeconds(10)))
                 .doOnSuccess(response -> {
-                    this.logger.info("Successfully created metric export request");
+                    this.logger.info("Successfully created metric export request with uuid={} and metricType={}", response.getMetricExportUUID(), response.getMetricType());
                 })
                 .onErrorResume(e -> {
                     this.logger.error("Failed to create metric export request: {}", e.getMessage());
@@ -133,4 +153,32 @@ public class PmsApi {
         return this.apiUtils.getRaw(URI.create(this.pmsEndpoint + PMS_METRIC_REQUESTS_API_BASE_PATH));
     }
 
+    public void requestResource(UUID orchestrationUuid, PmsResources resourceType, boolean cleanUp) throws PmsApiException {
+        this.logger.info("Request static orchestration data with orchestrationUuid={} resourceType={} and cleanUp={}", orchestrationUuid, resourceType, cleanUp);
+        Path requestedFilePath = Path.of(this.pulceoDataDir, "raw", orchestrationUuid.toString(), resourceType + ".json");
+        boolean requestedFileExists = this.fileManager.checkIfRequestedFileExists(requestedFilePath);
+
+        if (requestedFileExists) {
+            if (!cleanUp) {
+                return;
+            }
+        }
+        this.requestResource(orchestrationUuid, resourceType);
+    }
+
+    private void requestResource(UUID orchestrationUuid, PmsResources resourceType) throws PmsApiException {
+        switch (resourceType) {
+            case METRIC_REQUESTS -> requestsMetricRequests(orchestrationUuid);
+            default -> throw new PmsApiException("Resource type not supported: " + resourceType);
+        }
+    }
+
+    private void requestsMetricRequests(UUID orchestrationUuid) {
+        byte[] metricsRequestsRaw = this.getAllMetricRequestsRaw();
+        this.fileManager.saveAsJson(metricsRequestsRaw, "raw", orchestrationUuid.toString(), "METRIC_REQUESTS.json");
+    }
+
+    public void collectStaticOrchestrationData(UUID orchestrationUuid, boolean cleanUp) throws PmsApiException {
+        this.requestResource(orchestrationUuid, PmsResources.METRIC_REQUESTS, cleanUp);
+    }
 }

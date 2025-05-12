@@ -56,12 +56,12 @@ public class OrchestrationController {
 
     @PostMapping
     @RequestMapping("/{id}/reports")
-    public ResponseEntity<Void> createReport(@PathVariable String id) throws OrchestrationServiceException {
+    public ResponseEntity<Void> createReport(@PathVariable String id, @RequestParam(defaultValue = "false") boolean cleanUp) throws OrchestrationServiceException {
         Optional<Orchestration> orchestration = this.resolveOrchestration(id);
         if (orchestration.isEmpty()) {
             return ResponseEntity.status(404).build();
         } else {
-            this.orchestrationService.createReport(orchestration.get().getUuid());
+            this.orchestrationService.createReport(orchestration.get().getUuid(), cleanUp);
             // TODO: handle return for orchestration report
             return ResponseEntity.status(201).build();
         }

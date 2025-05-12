@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class ApiUtils {
@@ -32,7 +33,7 @@ public class ApiUtils {
                 })
                 .onErrorResume(e -> {
                     this.logger.error("Error retrieving data from PSM", e);
-                    return Mono.empty();
+                    return Mono.just("{}".getBytes(StandardCharsets.UTF_8));
                 })
                 .block();
     }
