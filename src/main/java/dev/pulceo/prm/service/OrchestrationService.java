@@ -1,10 +1,8 @@
 package dev.pulceo.prm.service;
 
-import dev.pulceo.prm.api.PmsApi;
-import dev.pulceo.prm.api.PnaApi;
-import dev.pulceo.prm.api.PrmApi;
-import dev.pulceo.prm.api.PsmApi;
+import dev.pulceo.prm.api.*;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
+import dev.pulceo.prm.api.dto.report.GenerateReportRequestDTO;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.api.exception.PrmApiException;
 import dev.pulceo.prm.api.exception.PsmApiException;
@@ -41,18 +39,20 @@ public class OrchestrationService {
     private final PrmApi prmApi;
     private final PmsApi pmsApi;
     private final PnaApi pnaApi;
+    private final PrsApi prsApi;
     @Value("${psm.data.dir}")
     private String psmDataDir;
     private final Lock reportCreationLock = new ReentrantLock();
 
     @Autowired
-    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsApi pmsApi, PnaApi pnaApi) {
+    public OrchestrationService(OrchestrationRepository orchestrationRepository, OrchestrationContextRepository contextRepository, PsmApi psmApi, PrmApi prmApi, PmsApi pmsApi, PnaApi pnaApi, PrsApi prsApi) {
         this.orchestrationRepository = orchestrationRepository;
         this.contextRepository = contextRepository;
         this.psmApi = psmApi;
         this.prmApi = prmApi;
         this.pmsApi = pmsApi;
         this.pnaApi = pnaApi;
+        this.prsApi = prsApi;
     }
 
     public Orchestration createOrchestration(Orchestration orchestration) throws OrchestrationServiceException {
@@ -286,7 +286,10 @@ public class OrchestrationService {
                 this.collectDynamicOrchestrationData(orchestrationUUID, cleanUp);
 
                 // TODO: create report with psm
-
+                GenerateReportRequestDTO generateOrchestrationReport = GenerateReportRequestDTO.builder()
+                        .orchestrationUUID(orchestrationUUID)
+                        .build();
+                this.prsApi.generateOrchestrationReport(generateOrchestrationReport);
             } finally {
                 this.reportCreationLock.unlock();
             }
