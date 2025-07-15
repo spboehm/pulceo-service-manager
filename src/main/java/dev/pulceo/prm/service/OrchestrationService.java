@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -96,10 +98,17 @@ public class OrchestrationService {
             OrchestrationStatus currentOrchestrationStatus = updatedOrchestration.getStatus();
             try {
                 validateOrchestrationStatusTransition(currentOrchestrationStatus, newOrchestrationStatus);
+                if (currentOrchestrationStatus == OrchestrationStatus.NEW && newOrchestrationStatus == OrchestrationStatus.RUNNING) {
+                    // NEW -> RUNNING
+                    updatedOrchestration.setStartTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+                } else if (currentOrchestrationStatus == OrchestrationStatus.RUNNING && newOrchestrationStatus == OrchestrationStatus.COMPLETED) {
+                    // RUNNING -> COMPLETED
+                    updatedOrchestration.setEndTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+                }
             } catch (OrchestrationServiceException e) {
                 this.logger.error("Invalid status transition for Orchestration with uuid={}, name={} from {} to {}: {}",
-                        optionalOrchestration.get().getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, newOrchestrationStatus, e.getMessage());
-                throw new OrchestrationServiceException(e);
+                        optionalOrchestration.get().getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, newOrchestrationStatus, e.getMessage(), e);
+                throw new OrchestrationServiceException("Invalid status transition for Orchestration with id=%s from %s to %s: %s".formatted(id, currentOrchestrationStatus, newOrchestrationStatus, e.getMessage()));
             }
             updatedOrchestration.setStatus(newOrchestrationStatus);
             this.logger.info("Updating Orchestration with uuid={}, name={} from status={} to status={}", updatedOrchestration.getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, updatedOrchestration.getStatus());
@@ -284,6 +293,9 @@ public class OrchestrationService {
 
                 // TODO: dynamic
                 this.collectDynamicOrchestrationData(orchestrationUUID, cleanUp);
+
+                // TODO: generate META.json
+
 
                 // TODO: create report with psm
                 GenerateReportRequestDTO generateOrchestrationReport = GenerateReportRequestDTO.builder()

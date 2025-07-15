@@ -11,6 +11,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -27,7 +28,8 @@ import java.util.Objects;
         }
 )
 public class Orchestration extends BaseEntity {
-
+    private Timestamp startTimestamp;
+    private Timestamp endTimestamp;
     @NotBlank(message = "Orchestration name cannot be blank!")
     private String name;
     @Builder.Default
