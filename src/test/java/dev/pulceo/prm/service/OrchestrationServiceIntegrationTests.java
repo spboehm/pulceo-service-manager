@@ -10,8 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -207,5 +212,30 @@ public class OrchestrationServiceIntegrationTests {
         assertEquals(createdOrchestration, orchestrationContext.getOrchestration());
     }
 
+    @Test
+    public void testGenerateAndSaveMetaFile_createsMetaFileSuccessfully() throws Exception {
+        // given
+        Orchestration orchestration = orchestrationService.createOrchestration(
+                Orchestration.builder()
+                        .name("integration-test")
+                        .description("integration-test")
+                        .status(OrchestrationStatus.COMPLETED)
+                        .startTimestamp(Timestamp.valueOf(LocalDateTime.now().minusHours(1)))
+                        .endTimestamp(Timestamp.valueOf(LocalDateTime.now()))
+                        .properties(Map.of("key1", "value1", "key2", "value2"))
+                        .build()
+        );
+        UUID orchestrationUUID = orchestration.getUuid();
+
+        // when
+        orchestrationService.generateAndSaveMetaFile(orchestrationUUID);
+
+        // then
+        Path metaFilePath = Path.of("/tmp/psm-data/raw", orchestrationUUID.toString(), "META.json");
+        assertTrue(Files.exists(metaFilePath));
+        String content = Files.readString(metaFilePath);
+        assertTrue(content.contains("START_TIMESTAMP"));
+        assertTrue(content.contains("END_TIMESTAMP"));
+    }
 
 }

@@ -1,5 +1,8 @@
 package dev.pulceo.prm.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.pulceo.prm.api.*;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
 import dev.pulceo.prm.api.dto.report.GenerateReportRequestDTO;
@@ -254,15 +257,43 @@ public class OrchestrationService {
 
     }
 
-    private void createDirsForOrchestrationData(UUID orchestrationUUID) {
+    public void generateAndSaveMetaFile(UUID orchestrationUUID) throws OrchestrationServiceException {
+        Orchestration orchestration = this.readOrchestrationWithPropertiesByUUID(orchestrationUUID)
+                .orElseThrow(() -> new OrchestrationServiceException("Orchestration with UUID %s not found".formatted(orchestrationUUID)));
+
+        this.createDirsForOrchestrationData(orchestrationUUID);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode jsonNode = objectMapper.createObjectNode();
+
+        jsonNode.put("CREATED_AT", Timestamp.valueOf(LocalDateTime.now()).toInstant().toString());
+        jsonNode.put("UUID", orchestration.getUuid().toString());
+        jsonNode.put("NAME", orchestration.getName());
+        jsonNode.put("START_TIMESTAMP", orchestration.getStartTimestamp() != null ? orchestration.getStartTimestamp().toInstant().toString() : "");
+        jsonNode.put("END_TIMESTAMP", orchestration.getEndTimestamp() != null ? orchestration.getEndTimestamp().toInstant().toString() : "");
+        jsonNode.put("DESCRIPTION", orchestration.getDescription());
+        jsonNode.put("STATUS", orchestration.getStatus().toString());
+        jsonNode.set("PROPERTIES", objectMapper.valueToTree(orchestration.getProperties()));
+
+        try {
+            Path metaFilePath = Path.of(this.psmDataDir, "raw", orchestrationUUID.toString(), "META.json");
+            Files.writeString(metaFilePath, objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode));
+        } catch (JsonProcessingException e) {
+            throw new OrchestrationServiceException("Failed to serialize meta file JSON", e);
+        } catch (IOException e) {
+            throw new OrchestrationServiceException("Failed to write meta file for orchestration with uuid=%s".formatted(orchestrationUUID), e);
+        }
+    }
+
+    private void createDirsForOrchestrationData(UUID orchestrationUUID) throws OrchestrationServiceException {
         logger.info("Creating directories for orchestration data with uuid={}", orchestrationUUID);
         try {
             Files.createDirectories(Path.of(this.psmDataDir, "raw", orchestrationUUID.toString()));
             Files.createDirectories(Path.of(this.psmDataDir, "plots", orchestrationUUID.toString()));
             Files.createDirectories(Path.of(this.psmDataDir, "latex", orchestrationUUID.toString()));
             Files.createDirectories(Path.of(this.psmDataDir, "reports", orchestrationUUID.toString()));
-        } catch (Exception e) {
-            logger.error("Could not create directories for orchestration data", e);
+        } catch (IOException e) {
+            throw new OrchestrationServiceException("Could not create directories for orchestration data with uuid=%s".formatted(orchestrationUUID), e);
         }
     }
 
