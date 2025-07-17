@@ -81,6 +81,10 @@ public class OrchestrationService {
         return this.orchestrationRepository.findWithPropertiesByUuid(uuid);
     }
 
+    public Optional<Orchestration> readOrchestrationByUUID(UUID uuid) {
+        return this.orchestrationRepository.findByUuid(uuid);
+    }
+
     public Orchestration readDefaultOrchestration() throws OrchestrationServiceException {
         Optional<Orchestration> defaultOrchestration = this.orchestrationRepository.findByName("default");
         if (defaultOrchestration.isPresent()) {
@@ -315,23 +319,24 @@ public class OrchestrationService {
     public void createReport(UUID orchestrationUUID, boolean cleanUp) throws OrchestrationServiceException {
         logger.info("Creating report for orchestration with uuid={}", orchestrationUUID);
 
+        // check if orchestration exists
+        Optional<Orchestration> orchestrationOptional = this.readOrchestrationByUUID(orchestrationUUID);
+        if (orchestrationOptional.isEmpty()) {
+            logger.error("Orchestration with uuid={} not found", orchestrationUUID);
+            throw new OrchestrationServiceException("Orchestration with uuid=%s not found".formatted(orchestrationUUID));
+        }
         if (this.reportCreationLock.tryLock()) {
             try {
                 // TODO: retrieve data from PSM
 
-                // TODO: static
+
                 this.collectStaticOrchestrationData(orchestrationUUID, cleanUp);
-
-                // TODO: dynamic
                 this.collectDynamicOrchestrationData(orchestrationUUID, cleanUp);
-
-                // TODO: generate META.json
-
-
-                // TODO: create report with psm
+                this.generateAndSaveMetaFile(orchestrationUUID);
                 GenerateReportRequestDTO generateOrchestrationReport = GenerateReportRequestDTO.builder()
                         .orchestrationUUID(orchestrationUUID)
                         .build();
+
                 this.prsApi.generateOrchestrationReport(generateOrchestrationReport);
             } finally {
                 this.reportCreationLock.unlock();
