@@ -225,9 +225,7 @@ public class OrchestrationService {
                     for (MetricType metricType : MetricType.values()) {
                         this.pmsApi.requestMetric(orchestrationUuid, metricType, cleanUp);
                     }
-                    // TODO: Task Status Logs
                 } catch (PmsApiException e) {
-                    this.logger.error("Failed to collect dynamic orchestration data", e);
                     throw new OrchestrationServiceException("Failed to collect dynamic orchestration data", e);
                 }
                 this.logger.info("Collecting dynamic orchestration data for orchestrationUuid={} successfully completed", orchestrationUuid);
@@ -327,16 +325,16 @@ public class OrchestrationService {
         }
         if (this.reportCreationLock.tryLock()) {
             try {
-                // TODO: retrieve data from PSM
-
-
                 this.collectStaticOrchestrationData(orchestrationUUID, cleanUp);
                 this.collectDynamicOrchestrationData(orchestrationUUID, cleanUp);
                 this.generateAndSaveMetaFile(orchestrationUUID);
+
+                // generate report
+                logger.info("Generating report for orchestration with uuid={}", orchestrationUUID);
+                this.prsApi.checkHealth();
                 GenerateReportRequestDTO generateOrchestrationReport = GenerateReportRequestDTO.builder()
                         .orchestrationUUID(orchestrationUUID)
                         .build();
-
                 this.prsApi.generateOrchestrationReport(generateOrchestrationReport);
             } finally {
                 this.reportCreationLock.unlock();

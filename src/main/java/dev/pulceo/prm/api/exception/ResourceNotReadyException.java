@@ -1,7 +1,6 @@
 package dev.pulceo.prm.api.exception;
 
 public class ResourceNotReadyException extends Exception {
-
     public ResourceNotReadyException() {
     }
 
