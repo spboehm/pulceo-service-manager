@@ -3,6 +3,7 @@ package dev.pulceo.prm.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationDTO;
 import dev.pulceo.prm.dto.orchestration.PatchOrchestrationPropertiesDTO;
+import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,5 +97,22 @@ public class OrchestrationControllerIntegrationTests {
                 .andExpect(jsonPath("$.properties.key2").value("newValue2"));
     }
 
+    @Test
+    public void testUpdateOrchestrationStatus_NewToRunningToCompleted() throws Exception {
+        String orchestrationId = "default";
+        OrchestrationStatus newStatus = OrchestrationStatus.RUNNING;
+        mockMvc.perform(put("/api/v1/orchestrations/" + orchestrationId + "/status")
+                        .param("orchestrationStatus", newStatus.name()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RUNNING"))
+                .andExpect(jsonPath("$.startTimestamp").isNotEmpty());
+
+        newStatus = OrchestrationStatus.COMPLETED;
+        mockMvc.perform(put("/api/v1/orchestrations/" + orchestrationId + "/status")
+                        .param("orchestrationStatus", newStatus.name()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.endTimestamp").isNotEmpty());
+    }
 
 }

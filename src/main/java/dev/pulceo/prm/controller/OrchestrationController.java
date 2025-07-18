@@ -6,6 +6,7 @@ import dev.pulceo.prm.dto.orchestration.OrchestrationDTO;
 import dev.pulceo.prm.dto.orchestration.PatchOrchestrationPropertiesDTO;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
+import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import dev.pulceo.prm.service.OrchestrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,17 @@ public class OrchestrationController {
     public ResponseEntity<CreateNewOrchestrationResponseDTO> createNewOrchestration(@RequestBody CreateNewOrchestrationDTO createNewOrchestrationDTO) throws OrchestrationServiceException {
         Orchestration orchestration = this.orchestrationService.createOrchestration(Orchestration.fromCreateNewOrchestrationDTO(createNewOrchestrationDTO));
         return ResponseEntity.status(201).body(CreateNewOrchestrationResponseDTO.fromOrchestration(orchestration));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<OrchestrationDTO> updateOrchestrationStatus(@PathVariable String id, @RequestParam OrchestrationStatus orchestrationStatus) throws OrchestrationServiceException {
+        Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
+        if (optionalOrchestration.isEmpty()) {
+            return ResponseEntity.status(404).build();
+        } else {
+            Orchestration updatedOrchestration = this.orchestrationService.updateOrchestrationStatus(id, orchestrationStatus);
+            return ResponseEntity.status(200).body(OrchestrationDTO.fromOrchestration(updatedOrchestration));
+        }
     }
 
     @GetMapping("/{id}")

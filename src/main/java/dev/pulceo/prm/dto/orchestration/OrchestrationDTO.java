@@ -2,10 +2,7 @@ package dev.pulceo.prm.dto.orchestration;
 
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.Map;
@@ -18,6 +15,10 @@ import java.util.UUID;
 @SuperBuilder
 public class OrchestrationDTO {
 
+    @Builder.Default
+    private String startTimestamp = "";
+    @Builder.Default
+    private String endTimestamp = "";
     private UUID uuid;
     private String name;
     private String description;
@@ -26,6 +27,8 @@ public class OrchestrationDTO {
 
     public static OrchestrationDTO fromOrchestration(Orchestration orchestration) {
         return OrchestrationDTO.builder()
+                .startTimestamp(orchestration.getStartTimestamp() != null ? orchestration.getStartTimestamp().toString() : "")
+                .endTimestamp(orchestration.getEndTimestamp() != null ? orchestration.getEndTimestamp().toString() : "")
                 .uuid(orchestration.getUuid())
                 .name(orchestration.getName())
                 .description(orchestration.getDescription())
