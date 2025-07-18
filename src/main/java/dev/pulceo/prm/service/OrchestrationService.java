@@ -119,7 +119,7 @@ public class OrchestrationService {
             }
             updatedOrchestration.setStatus(newOrchestrationStatus);
             this.logger.info("Updating Orchestration with uuid={}, name={} from status={} to status={}", updatedOrchestration.getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, updatedOrchestration.getStatus());
-            return updatedOrchestration;
+            return this.orchestrationRepository.save(updatedOrchestration);
         } else {
             this.logger.error("Orchestration with id={} not found!", id);
             throw new OrchestrationServiceException("Orchestration with id=%s not found".formatted(id));

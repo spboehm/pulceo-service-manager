@@ -1,9 +1,6 @@
 package dev.pulceo.prm.controller;
 
-import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationDTO;
-import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationResponseDTO;
-import dev.pulceo.prm.dto.orchestration.OrchestrationDTO;
-import dev.pulceo.prm.dto.orchestration.PatchOrchestrationPropertiesDTO;
+import dev.pulceo.prm.dto.orchestration.*;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
@@ -35,12 +32,12 @@ public class OrchestrationController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<OrchestrationDTO> updateOrchestrationStatus(@PathVariable String id, @RequestParam OrchestrationStatus orchestrationStatus) throws OrchestrationServiceException {
+    public ResponseEntity<OrchestrationDTO> updateOrchestrationStatus(@PathVariable String id, @RequestBody OrchestrationStatusDTO orchestrationStatusDTO) throws OrchestrationServiceException {
         Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
         if (optionalOrchestration.isEmpty()) {
             return ResponseEntity.status(404).build();
         } else {
-            Orchestration updatedOrchestration = this.orchestrationService.updateOrchestrationStatus(id, orchestrationStatus);
+            Orchestration updatedOrchestration = this.orchestrationService.updateOrchestrationStatus(id, OrchestrationStatus.fromOrchestrationStatusDTO(orchestrationStatusDTO));
             return ResponseEntity.status(200).body(OrchestrationDTO.fromOrchestration(updatedOrchestration));
         }
     }
