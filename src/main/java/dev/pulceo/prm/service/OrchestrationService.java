@@ -10,6 +10,7 @@ import dev.pulceo.prm.api.dto.report.GenerateReportRequestDTO;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.api.exception.PrmApiException;
 import dev.pulceo.prm.api.exception.PsmApiException;
+import dev.pulceo.prm.dto.orchestration.ShortOrchestrationContextDTO;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -29,9 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -170,6 +169,18 @@ public class OrchestrationService {
         }
     }
 
+    public List<ShortOrchestrationContextDTO> getAllOrchestrationContexts() throws OrchestrationServiceException {
+        List<ShortOrchestrationContextDTO> shortOrchestrationContexts = new ArrayList<>();
+        // psm
+        shortOrchestrationContexts.add(ShortOrchestrationContextDTO.fromOrchestration("psm", this.getOrCreateOrchestrationContext().getOrchestration()));
+        // prm API
+        shortOrchestrationContexts.add(ShortOrchestrationContextDTO.fromOrchestrationContextDTO("prm", this.prmApi.getOrchestrationContext()));
+        // pms API
+        shortOrchestrationContexts.add(ShortOrchestrationContextDTO.fromOrchestrationContextDTO("pms", this.pmsApi.getOrchestrationContext()));
+
+        return shortOrchestrationContexts;
+    }
+
     public OrchestrationContext setOrchestrationInOrchestrationContext(Orchestration orchestration) throws OrchestrationServiceException {
         OrchestrationContext context = this.getOrCreateOrchestrationContext();
         // only automatically set the orchestration in the context if the currently referenced orchestration is not RUNNING
@@ -219,13 +230,31 @@ public class OrchestrationService {
         return uuid.matches(uuidRegex);
     }
 
-    public void reset() {
+    public void reset() throws OrchestrationServiceException {
         this.pnaApi.resetAllPna();
         // reset PRM
         this.prmApi.resetOrchestrationContext();
-        // reset PSM
+        // reset PMS
         this.pmsApi.resetOrchestrationContext();
-        // TODO: reset psm - inform about new orchestration contex
+        // reset PSM
+        this.resetOrchestrationContext();
+    }
+
+    private void resetOrchestrationContext() throws OrchestrationServiceException {
+        OrchestrationContext context = this.getOrCreateOrchestrationContext();
+        this.logger.info("Resetting OrchestrationContext with id={} to default orchestration", context.getId());
+        Orchestration orchestration = context.getOrchestration();
+        orchestration.setStartTimestamp(null);
+        orchestration.setEndTimestamp(null);
+        orchestration.setStatus(OrchestrationStatus.NEW);
+        this.orchestrationRepository.save(orchestration);
+        this.contextRepository.save(context);
+        this.logger.info("OrchestrationContext with id={} successfully reset to orchestration with uuid={}, name={}, description={}, and status={}",
+                context.getId(),
+                orchestration.getUuid(),
+                orchestration.getName(),
+                orchestration.getDescription(),
+                orchestration.getStatus());
     }
 
     public void collectDynamicOrchestrationData(UUID orchestrationUuid, boolean cleanUp) throws OrchestrationServiceException {

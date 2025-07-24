@@ -4,6 +4,7 @@ import dev.pulceo.prm.api.dto.orchestration.UpdateOrchestrationContextDTO;
 import dev.pulceo.prm.api.dto.resource.PrmResources;
 import dev.pulceo.prm.api.exception.PrmApiException;
 import dev.pulceo.prm.dto.node.NodeDTO;
+import dev.pulceo.prm.dto.orchestration.OrchestrationContextDTO;
 import dev.pulceo.prm.util.FileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -240,6 +241,26 @@ public class PrmApi {
                     return Mono.empty();
                 })
                 .subscribe();
+    }
+
+    public OrchestrationContextDTO getOrchestrationContext() {
+        this.logger.info("Retrieving orchestration context from PMS");
+        return webClient
+                .get()
+                .uri(this.prmEndpoint + PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH)
+                .retrieve()
+                .bodyToMono(OrchestrationContextDTO.class)
+                .doOnSuccess(orchestrationContextDTO -> {
+                    this.logger.info("Successfully retrieved orchestration context from PMS: uuid={}, name={}", orchestrationContextDTO.getUuid(), orchestrationContextDTO.getName());
+                })
+                .onErrorResume(e -> {
+                    this.logger.warn("Could not retrieve orchestration context from PMS...use default orchestration context", e);
+                    return Mono.just(OrchestrationContextDTO.builder()
+                            .uuid(String.valueOf(UUID.fromString("00000000-0000-0000-0000-000000000000")))
+                            .name("default")
+                            .build());
+                })
+                .block();
     }
 
     private boolean checkIfUUID(String uuid) {

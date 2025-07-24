@@ -7,11 +7,11 @@ import dev.pulceo.prm.service.ApplicationService;
 import dev.pulceo.prm.service.OrchestrationService;
 import dev.pulceo.prm.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/orchestration-context")
@@ -35,10 +35,19 @@ public class OrchestrationContextController {
     }
 
     @PostMapping("/reset")
-    public void deleteOrchestrationContext() {
+    public void deleteOrchestrationContext() throws OrchestrationServiceException {
         this.applicationService.reset();
         this.taskService.reset();
         this.orchestrationService.reset();
+    }
+
+    @ExceptionHandler(value = OrchestrationServiceException.class)
+    public ResponseEntity<CustomErrorResponse> handleCloudRegistrationException(OrchestrationServiceException orchestrationServiceException) {
+        CustomErrorResponse error = new CustomErrorResponse("BAD_REQUEST", orchestrationServiceException.getMessage());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.setErrorMsg(orchestrationServiceException.getMessage());
+        error.setTimestamp(LocalDateTime.now());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
 }
