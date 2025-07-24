@@ -4,8 +4,10 @@ import dev.pulceo.prm.api.dto.metricexports.MetricExportDTO;
 import dev.pulceo.prm.api.dto.metricexports.MetricExportRequestDTO;
 import dev.pulceo.prm.api.dto.metricexports.MetricExportState;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
+import dev.pulceo.prm.api.dto.orchestration.UpdateOrchestrationContextDTO;
 import dev.pulceo.prm.api.dto.resource.PmsResources;
 import dev.pulceo.prm.api.exception.PmsApiException;
+import dev.pulceo.prm.api.exception.PrmApiException;
 import dev.pulceo.prm.api.exception.ResourceNotReadyException;
 import dev.pulceo.prm.util.FileManager;
 import org.slf4j.Logger;
@@ -180,5 +182,22 @@ public class PmsApi {
 
     public void collectStaticOrchestrationData(UUID orchestrationUuid, boolean cleanUp) throws PmsApiException {
         this.requestResource(orchestrationUuid, PmsResources.METRIC_REQUESTS, cleanUp);
+    }
+
+    public void updateOrchestrationContext(UpdateOrchestrationContextDTO updateOrchestrationContextDTO) {
+        this.logger.info("Update orchestration context on PRM");
+        this.webClient
+                .put()
+                .uri(this.pmsEndpoint + PMS_ORCHESTRATION_CONTEXT_API_BASE_PATH)
+                .bodyValue(updateOrchestrationContextDTO)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(30))
+                .doOnSuccess(response -> this.logger.info("Successfully updated orchestration context on PMS"))
+                .onErrorResume(e -> {
+                    this.logger.error("Failed to update orchestration context on PMS: {}", e.getMessage());
+                    return Mono.error(new PrmApiException("Failed to update orchestration context on PMS", e));
+                })
+                .block();
     }
 }

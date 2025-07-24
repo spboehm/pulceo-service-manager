@@ -48,7 +48,7 @@ public class PrsApi {
                 .get()
                 .uri(this.prsEndpoint + "/prs/health")
                 .retrieve()
-                .bodyToMono(Boolean.class)
+                .bodyToMono(Void.class)
                 .doOnSuccess(response -> {
                     this.logger.info("PRS health check successful");
                 })
@@ -56,7 +56,7 @@ public class PrsApi {
                     this.logger.error("PRS health check failed: {}", e.getMessage());
                     throw new RuntimeException(new PrsApiException("PRS health check failed", e));
                 })
-                .block();
+                .subscribe();
     }
 
 }

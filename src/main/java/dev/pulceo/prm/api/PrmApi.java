@@ -1,5 +1,6 @@
 package dev.pulceo.prm.api;
 
+import dev.pulceo.prm.api.dto.orchestration.UpdateOrchestrationContextDTO;
 import dev.pulceo.prm.api.dto.resource.PrmResources;
 import dev.pulceo.prm.api.exception.PrmApiException;
 import dev.pulceo.prm.dto.node.NodeDTO;
@@ -204,6 +205,23 @@ public class PrmApi {
         } else {
             return globalId;
         }
+    }
+
+    public void updateOrchestrationContext(UpdateOrchestrationContextDTO updateOrchestrationContextDTO) {
+        this.logger.info("Update orchestration context on PRM");
+        this.webClient
+                .put()
+                .uri(this.prmEndpoint + PRM_ORCHESTRATION_CONTEXT_API_BASE_PATH)
+                .bodyValue(updateOrchestrationContextDTO)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .timeout(Duration.ofSeconds(30))
+                .doOnSuccess(response -> this.logger.info("Successfully updated orchestration context on PRM"))
+                .onErrorResume(e -> {
+                    this.logger.error("Failed to update orchestration context on PRM: {}", e.getMessage());
+                    return Mono.error(new PrmApiException("Failed to update orchestration context on PRM", e));
+                })
+                .block();
     }
 
     public void resetOrchestrationContext() {

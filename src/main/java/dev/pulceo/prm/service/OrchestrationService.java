@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.pulceo.prm.api.*;
 import dev.pulceo.prm.api.dto.metricexports.MetricType;
+import dev.pulceo.prm.api.dto.orchestration.UpdateOrchestrationContextDTO;
 import dev.pulceo.prm.api.dto.report.GenerateReportRequestDTO;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.api.exception.PrmApiException;
@@ -179,6 +180,18 @@ public class OrchestrationService {
                     orchestration.getDescription(),
                     orchestration.getStatus());
             context.setOrchestration(orchestration);
+
+            // update the orchestration context on PRM
+            this.prmApi.updateOrchestrationContext(UpdateOrchestrationContextDTO.builder()
+                    .uuid(context.getOrchestration().getUuid().toString())
+                    .name(context.getOrchestration().getName())
+                    .build());
+
+            // update the orchestration context on PMS
+            this.pmsApi.updateOrchestrationContext(UpdateOrchestrationContextDTO.builder()
+                    .uuid(context.getOrchestration().getUuid().toString())
+                    .name(context.getOrchestration().getName())
+                    .build());
             return contextRepository.save(context);
         } else {
             this.logger.error("OrchestrationContext is already referencing an Orchestration with uuid={}, name={}, and status={}, not updating it",
@@ -212,7 +225,7 @@ public class OrchestrationService {
         this.prmApi.resetOrchestrationContext();
         // reset PSM
         this.pmsApi.resetOrchestrationContext();
-        // TODO: inform about new orchestration context
+        // TODO: reset psm - inform about new orchestration contex
     }
 
     public void collectDynamicOrchestrationData(UUID orchestrationUuid, boolean cleanUp) throws OrchestrationServiceException {
