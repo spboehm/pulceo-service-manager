@@ -14,11 +14,13 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class OrchestrationContextDTO {
 
+    private String service;
     private String uuid;
     private String name;
 
-    public static OrchestrationContextDTO fromOrchestrationContext(OrchestrationContext orchestrationContext) {
+    public static OrchestrationContextDTO fromOrchestrationContext(String service, OrchestrationContext orchestrationContext) {
         return OrchestrationContextDTO.builder()
+                .service(service)
                 .uuid(orchestrationContext.getOrchestration().getUuid().toString())
                 .name(orchestrationContext.getOrchestration().getName())
                 .build();

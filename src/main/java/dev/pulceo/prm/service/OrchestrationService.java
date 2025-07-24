@@ -10,7 +10,7 @@ import dev.pulceo.prm.api.dto.report.GenerateReportRequestDTO;
 import dev.pulceo.prm.api.exception.PmsApiException;
 import dev.pulceo.prm.api.exception.PrmApiException;
 import dev.pulceo.prm.api.exception.PsmApiException;
-import dev.pulceo.prm.dto.orchestration.ShortOrchestrationContextDTO;
+import dev.pulceo.prm.dto.orchestration.OrchestrationContextDTO;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
@@ -169,16 +169,15 @@ public class OrchestrationService {
         }
     }
 
-    public List<ShortOrchestrationContextDTO> getAllOrchestrationContexts() throws OrchestrationServiceException {
-        List<ShortOrchestrationContextDTO> shortOrchestrationContexts = new ArrayList<>();
+    public List<OrchestrationContextDTO> getAllOrchestrationContexts() throws OrchestrationServiceException {
+        List<OrchestrationContextDTO> orchestrationContextDTOs = new ArrayList<>();
         // psm
-        shortOrchestrationContexts.add(ShortOrchestrationContextDTO.fromOrchestration("psm", this.getOrCreateOrchestrationContext().getOrchestration()));
+        orchestrationContextDTOs.add(OrchestrationContextDTO.fromOrchestrationContext("psm", this.getOrCreateOrchestrationContext()));
         // prm API
-        shortOrchestrationContexts.add(ShortOrchestrationContextDTO.fromOrchestrationContextDTO("prm", this.prmApi.getOrchestrationContext()));
+        orchestrationContextDTOs.add(this.prmApi.getOrchestrationContext());
         // pms API
-        shortOrchestrationContexts.add(ShortOrchestrationContextDTO.fromOrchestrationContextDTO("pms", this.pmsApi.getOrchestrationContext()));
-
-        return shortOrchestrationContexts;
+        orchestrationContextDTOs.add(this.pmsApi.getOrchestrationContext());
+        return orchestrationContextDTOs;
     }
 
     public OrchestrationContext setOrchestrationInOrchestrationContext(Orchestration orchestration) throws OrchestrationServiceException {
