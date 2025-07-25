@@ -30,13 +30,13 @@ public class OrchestrationContextController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrchestrationContextDTO>> getOrchestrationContext(
+    public ResponseEntity<?> getOrchestrationContext(
             @RequestParam(value = "scope", defaultValue = "service") String scope) throws OrchestrationServiceException {
         List<OrchestrationContextDTO> orchestrationContexts = new ArrayList<>();
         if ("all".equalsIgnoreCase(scope)) {
             orchestrationContexts.addAll(this.orchestrationService.getAllOrchestrationContexts());
         } else {
-            orchestrationContexts.add(OrchestrationContextDTO.fromOrchestrationContext("psm", this.orchestrationService.getOrCreateOrchestrationContext()));
+            return ResponseEntity.ok(OrchestrationContextDTO.fromOrchestrationContext("psm", this.orchestrationService.getOrCreateOrchestrationContext()));
         }
         return ResponseEntity.ok(orchestrationContexts);
     }
