@@ -31,8 +31,7 @@ public class PnaAPITests {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeAll
-    static void setupClass() throws InterruptedException {
-        Thread.sleep(1000);
+    static void setupClass() {
         wireMockServerForPRM.start();
         wireMockServerForPNA.start();
     }
@@ -45,8 +44,13 @@ public class PnaAPITests {
 
     @AfterAll
     static void clean() {
-        wireMockServerForPRM.shutdown();
-        wireMockServerForPNA.shutdown();
+        if (wireMockServerForPRM.isRunning()) {
+            wireMockServerForPRM.stop();
+        }
+
+        if (wireMockServerForPNA.isRunning()) {
+            wireMockServerForPNA.stop();
+        }
     }
 
     @Test

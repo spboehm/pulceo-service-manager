@@ -87,8 +87,12 @@ public class TaskServiceIntegrationTests {
 
     @AfterAll
     public static void tearDown() {
-        TaskServiceIntegrationTests.wireMockServerForPRM.shutdown();
-        TaskServiceIntegrationTests.wireMockServerForPNA.shutdown();
+        if (TaskServiceIntegrationTests.wireMockServerForPRM.isRunning()) {
+            TaskServiceIntegrationTests.wireMockServerForPRM.stop();
+        }
+        if (TaskServiceIntegrationTests.wireMockServerForPNA.isRunning()) {
+            TaskServiceIntegrationTests.wireMockServerForPNA.stop();
+        }
     }
 
     @Test

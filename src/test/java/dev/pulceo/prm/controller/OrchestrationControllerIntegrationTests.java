@@ -1,10 +1,16 @@
 package dev.pulceo.prm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import dev.pulceo.prm.dto.orchestration.CreateNewOrchestrationDTO;
+import dev.pulceo.prm.dto.orchestration.OrchestrationContextDTO;
+import dev.pulceo.prm.dto.orchestration.OrchestrationStatusDTO;
 import dev.pulceo.prm.dto.orchestration.PatchOrchestrationPropertiesDTO;
 import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +36,57 @@ public class OrchestrationControllerIntegrationTests {
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static WireMockServer wireMockServerPRM;
+    private static WireMockServer wireMockServerPMS;
+
+    @BeforeAll
+    static void setupClass() {
+        wireMockServerPRM = new WireMockServer(7878);
+        wireMockServerPRM.start();
+        wireMockServerPMS = new WireMockServer(7777);
+        wireMockServerPMS.start();
+    }
+
+    @AfterAll
+    static void clean() {
+        if (wireMockServerPRM.isRunning()) {
+            wireMockServerPRM.stop();
+        }
+        if (wireMockServerPMS.isRunning()) {
+            wireMockServerPMS.stop();
+        }
+    }
+
+    @BeforeEach
+    void setup() throws Exception {
+        wireMockServerPRM.resetRequests();
+        wireMockServerPMS.resetRequests();
+
+        wireMockServerPRM.stubFor(com.github.tomakehurst.wiremock.client.WireMock.put("/api/v1/orchestration-context")
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(objectMapper.writeValueAsString(
+                                OrchestrationContextDTO.builder()
+                                        .service("prm")
+                                        .name("test")
+                                        .uuid("1b1c6697-cb29-4377-bcf8-9fd61ac6c0f3")
+                                        .build()
+                        )))
+        );
+
+        wireMockServerPMS.stubFor(com.github.tomakehurst.wiremock.client.WireMock.put("/api/v1/orchestration-context")
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(objectMapper.writeValueAsString(
+                                OrchestrationContextDTO.builder()
+                                        .service("pms")
+                                        .name("test")
+                                        .uuid("2a2b7798-db39-4477-bcf8-9fd61ac6c0f4")
+                                        .build()
+                        )))
+        );
+    }
 
     @Test
     public void testCreateNewOrchestration() throws Exception {
@@ -100,16 +158,18 @@ public class OrchestrationControllerIntegrationTests {
     @Test
     public void testUpdateOrchestrationStatus_NewToRunningToCompleted() throws Exception {
         String orchestrationId = "default";
-        OrchestrationStatus newStatus = OrchestrationStatus.RUNNING;
+        OrchestrationStatusDTO newStatus = OrchestrationStatusDTO.builder().orchestrationStatus(OrchestrationStatus.RUNNING).build();
         mockMvc.perform(put("/api/v1/orchestrations/" + orchestrationId + "/status")
-                        .param("orchestrationStatus", newStatus.name()))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(newStatus)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.startTimestamp").isNotEmpty());
 
-        newStatus = OrchestrationStatus.COMPLETED;
+        newStatus = OrchestrationStatusDTO.builder().orchestrationStatus(OrchestrationStatus.COMPLETED).build();
         mockMvc.perform(put("/api/v1/orchestrations/" + orchestrationId + "/status")
-                        .param("orchestrationStatus", newStatus.name()))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(newStatus)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.endTimestamp").isNotEmpty());

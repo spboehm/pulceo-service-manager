@@ -30,8 +30,8 @@ class PrsApiTests {
 
     @AfterAll
     static void clean() {
-        if (wireMockServer != null) {
-            wireMockServer.shutdown();
+        if (wireMockServer.isRunning()) {
+            wireMockServer.stop();
         }
     }
 

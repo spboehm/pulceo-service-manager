@@ -42,7 +42,9 @@ public class PrmApiTests {
 
     @AfterAll
     static void clean() {
-        wireMockServer.shutdown();
+        if (wireMockServer.isRunning()) {
+            wireMockServer.stop();
+        }
     }
 
     @Test

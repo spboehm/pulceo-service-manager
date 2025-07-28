@@ -77,6 +77,10 @@ public class OrchestrationService {
         return this.orchestrationRepository.findWithPropertiesByName(name);
     }
 
+    public Optional<Orchestration> readOrchestrationByName(String name) {
+        return this.orchestrationRepository.findByName(name);
+    }
+
     public Optional<Orchestration> readOrchestrationWithPropertiesByUUID(UUID uuid) {
         return this.orchestrationRepository.findWithPropertiesByUuid(uuid);
     }
@@ -119,7 +123,7 @@ public class OrchestrationService {
             }
             updatedOrchestration.setStatus(newOrchestrationStatus);
             this.logger.info("Updating Orchestration with uuid={}, name={} from status={} to status={}", updatedOrchestration.getUuid(), updatedOrchestration.getName(), currentOrchestrationStatus, updatedOrchestration.getStatus());
-            return this.orchestrationRepository.save(updatedOrchestration);
+            return updatedOrchestration;
         } else {
             this.logger.error("Orchestration with id={} not found!", id);
             throw new OrchestrationServiceException("Orchestration with id=%s not found".formatted(id));
@@ -135,7 +139,7 @@ public class OrchestrationService {
     }
 
     public Orchestration updateOrchestrationProperties(String id, Map<String, String> properties) throws OrchestrationServiceException {
-        Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
+        Optional<Orchestration> optionalOrchestration = this.resolveOrchestrationWithProperties(id);
         if (optionalOrchestration.isPresent()) {
             Orchestration orchestration = optionalOrchestration.get();
             orchestration.setProperties(properties);
@@ -217,6 +221,15 @@ public class OrchestrationService {
     }
 
     private Optional<Orchestration> resolveOrchestration(String id) {
+        if (checkIfUUID(id)) {
+            return this.readOrchestrationByUUID(UUID.fromString(id));
+        } else {
+            return this.readOrchestrationWithPropertiesByName(id);
+        }
+    }
+
+
+    private Optional<Orchestration> resolveOrchestrationWithProperties(String id) {
         if (checkIfUUID(id)) {
             return this.readOrchestrationWithPropertiesByUUID(UUID.fromString(id));
         } else {

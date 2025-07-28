@@ -1,11 +1,17 @@
 package dev.pulceo.prm.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import dev.pulceo.prm.dto.orchestration.OrchestrationContextDTO;
 import dev.pulceo.prm.exception.OrchestrationServiceException;
 import dev.pulceo.prm.model.orchestration.Orchestration;
 import dev.pulceo.prm.model.orchestration.OrchestrationContext;
 import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {"webclient.scheme=http"})
@@ -28,6 +36,57 @@ public class OrchestrationServiceIntegrationTests {
     private OrchestrationService orchestrationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static WireMockServer wireMockServerPRM;
+    private static WireMockServer wireMockServerPMS;
+
+    @BeforeAll
+    static void setupClass() throws InterruptedException {
+        wireMockServerPRM = new WireMockServer(7878);
+        wireMockServerPRM.start();
+        wireMockServerPMS = new WireMockServer(7777);
+        wireMockServerPMS.start();
+    }
+
+    @AfterAll
+    static void clean() throws InterruptedException {
+        if (wireMockServerPRM.isRunning()) {
+            wireMockServerPRM.stop();
+        }
+        if (wireMockServerPMS.isRunning()) {
+            wireMockServerPMS.stop();
+        }
+    }
+
+    @BeforeEach
+    void setup() throws JsonProcessingException {
+        wireMockServerPRM.resetRequests();
+        wireMockServerPMS.resetRequests();
+
+        wireMockServerPRM.stubFor(put("/api/v1/orchestration-context")
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(objectMapper.writeValueAsString(
+                                OrchestrationContextDTO.builder()
+                                        .service("prm")
+                                        .name("test")
+                                        .uuid("1b1c6697-cb29-4377-bcf8-9fd61ac6c0f3")
+                                        .build()
+                        )))
+        );
+
+        wireMockServerPMS.stubFor(put("/api/v1/orchestration-context")
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(objectMapper.writeValueAsString(
+                                OrchestrationContextDTO.builder()
+                                        .service("pms")
+                                        .name("test")
+                                        .uuid("2a2b7798-db39-4477-bcf8-9fd61ac6c0f4")
+                                        .build()
+                        )))
+        );
+    }
 
     @Test
     public void testCreateOrchestration() throws OrchestrationServiceException {

@@ -54,9 +54,9 @@ public class PrsApi {
                 })
                 .onErrorResume(e -> {
                     this.logger.error("PRS health check failed: {}", e.getMessage());
-                    throw new RuntimeException(new PrsApiException("PRS health check failed", e));
+                    return Mono.error(new PrsApiException("PRS health check failed"));
                 })
-                .subscribe();
+                .block();
     }
 
 }

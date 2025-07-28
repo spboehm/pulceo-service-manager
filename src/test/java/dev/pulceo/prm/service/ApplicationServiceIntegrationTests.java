@@ -43,7 +43,6 @@ public class ApplicationServiceIntegrationTests {
 
     @BeforeAll
     static void setupClass() throws InterruptedException {
-        Thread.sleep(1000);
         ApplicationServiceIntegrationTests.wireMockServerForPRM.start();
         ApplicationServiceIntegrationTests.wireMockServerForPNA.start();
 
@@ -57,9 +56,12 @@ public class ApplicationServiceIntegrationTests {
 
     @AfterAll
     public static void tearDown() {
-        ApplicationServiceIntegrationTests.wireMockServerForPRM.shutdown();
-        ApplicationServiceIntegrationTests.wireMockServerForPNA.shutdown();
-        // applicationRepository.deleteAll();
+        if (ApplicationServiceIntegrationTests.wireMockServerForPRM.isRunning()) {
+            ApplicationServiceIntegrationTests.wireMockServerForPRM.stop();
+        }
+        if (ApplicationServiceIntegrationTests.wireMockServerForPNA.isRunning()) {
+            ApplicationServiceIntegrationTests.wireMockServerForPNA.stop();
+        }
     }
 
     @Test
