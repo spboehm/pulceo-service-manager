@@ -195,17 +195,25 @@ public class OrchestrationService {
                     orchestration.getStatus());
             context.setOrchestration(orchestration);
 
-            // update the orchestration context on PRM
-            this.prmApi.updateOrchestrationContext(UpdateOrchestrationContextDTO.builder()
-                    .uuid(context.getOrchestration().getUuid().toString())
-                    .name(context.getOrchestration().getName())
-                    .build());
+            try {
+                // update the orchestration context on PRM
+                this.prmApi.updateOrchestrationContext(UpdateOrchestrationContextDTO.builder()
+                        .uuid(context.getOrchestration().getUuid().toString())
+                        .name(context.getOrchestration().getName())
+                        .build());
+            } catch (RuntimeException e) {
+                this.logger.warn("Failed to update OrchestrationContext on PRM: {}", e.getMessage(), e);
+            }
 
             // update the orchestration context on PMS
-            this.pmsApi.updateOrchestrationContext(UpdateOrchestrationContextDTO.builder()
-                    .uuid(context.getOrchestration().getUuid().toString())
-                    .name(context.getOrchestration().getName())
-                    .build());
+            try {
+                this.pmsApi.updateOrchestrationContext(UpdateOrchestrationContextDTO.builder()
+                        .uuid(context.getOrchestration().getUuid().toString())
+                        .name(context.getOrchestration().getName())
+                        .build());
+            } catch (RuntimeException e) {
+                this.logger.warn("Failed to update OrchestrationContext on PMS: {}", e.getMessage(), e);
+            }
             return contextRepository.save(context);
         } else {
             this.logger.error("OrchestrationContext is already referencing an Orchestration with uuid={}, name={}, and status={}, not updating it",

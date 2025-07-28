@@ -31,7 +31,6 @@ public class PrmApiTests {
 
     @BeforeAll
     static void setupClass() throws InterruptedException {
-        Thread.sleep(1000);
         wireMockServer.start();
     }
 
