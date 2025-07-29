@@ -59,6 +59,17 @@ tasks.register("bootRun-psm-dev") {
     finalizedBy("bootRun")
 }
 
+tasks.register("bootRun-psm-dev-mqtt-public") {
+    group = "application"
+    description = "Runs psm with the dev-mqtt-public profile"
+    doFirst {
+        tasks.bootRun.configure {
+            systemProperty("spring.profiles.active", "dev-mqtt-public")
+        }
+    }
+    finalizedBy("bootRun")
+}
+
 test {
     useJUnitPlatform()
 }
