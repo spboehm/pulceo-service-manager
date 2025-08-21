@@ -112,7 +112,11 @@ public class TaskService {
         String previousStateOfTaskScheduling = taskScheduling.toString();
         taskScheduling.setStatus(TaskStatus.NEW);
         taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
+
+        // set task scheduling properties
+        this.enrichTaskSchedulingWithProperties(schedulingProperties);
         taskScheduling.setProperties(schedulingProperties);
+
         // TODO: inject sent scheduling properties into taskScheduling
         taskScheduling.addTask(task);
         task.setTaskScheduling(taskScheduling);
@@ -136,6 +140,19 @@ public class TaskService {
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
         // TODO: In case of status changes, schedule task directly
         return savedTask;
+    }
+
+    private void enrichTaskSchedulingWithProperties(Map<String, String> schedulingProperties) {
+        if (schedulingProperties.containsKey("PULCEO_OFFLOADING_PROTOCOL")) {
+            if (schedulingProperties.get("PULCEO_OFFLOADING_PROTOCOL").equalsIgnoreCase("MQTT")) {
+                return;
+            }
+            if (schedulingProperties.get("PULCEO_OFFLOADING_PROTOCOL").equalsIgnoreCase("HTTP")) {
+                return;
+            }
+        } else {
+            schedulingProperties.put("PULCEO_OFFLOADING_PROTOCOL", "MQTT");
+        }
     }
 
     private void issueNewTaskToUser(Task task) {

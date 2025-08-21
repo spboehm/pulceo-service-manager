@@ -171,8 +171,9 @@ public class TaskOffloader {
                     .destinationApplicationComponentEndpoint(taskScheduling.getTask().getTaskMetaData().getDestinationApplicationComponentEndpoint())
                     .properties(taskScheduling.getTask().getProperties())
                     .build();
-            // note that this is an async operation, task will only be created on remote device (blocking), task changes are incoming asynchronously
+            // HTTP: note that this is an async operation, task will only be created on remote device (blocking), task changes are incoming asynchronously
             return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
+            //return this.pnaApi.createNewTaskOnPnaWithMQTT(taskScheduling.getNodeId(), createNewTaskOnPna);
         } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
             logger.warn("Update after offloading not supported yet");
         }
