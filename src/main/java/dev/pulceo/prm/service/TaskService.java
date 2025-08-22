@@ -114,7 +114,7 @@ public class TaskService {
         taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
 
         // set task scheduling properties
-        this.enrichTaskSchedulingWithProperties(schedulingProperties);
+        // this.enrichTaskSchedulingWithProperties(schedulingProperties);
         taskScheduling.setProperties(schedulingProperties);
 
         // TODO: inject sent scheduling properties into taskScheduling
