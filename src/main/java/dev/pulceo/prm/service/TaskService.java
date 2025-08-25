@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class TaskService {
@@ -63,6 +64,7 @@ public class TaskService {
     private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
     private final TaskStatisticsService taskStatisticsService;
     private final TaskOffloader taskOffloader;
+    private final AtomicInteger taskCounterCreated = new AtomicInteger(0);
 
     @Value("${psm.uuid}")
     private String PSM_UUID;
@@ -138,6 +140,7 @@ public class TaskService {
         // issue to user
         issueNewTaskToUser(savedTask);
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
+        logger.debug("Created tasks with status NEW: {}", taskCounterCreated.incrementAndGet());
         // TODO: In case of status changes, schedule task directly
         return savedTask;
     }
@@ -156,6 +159,7 @@ public class TaskService {
     }
 
     private void issueNewTaskToUser(Task task) {
+        this.logger.debug(task.toString());
         this.taskServiceChannel.send(new GenericMessage<>(TaskMessage.fromTask(task), new MessageHeaders(Map.of("mqtt_topic", "tasks/new"))));
     }
 
