@@ -18,6 +18,7 @@ import dev.pulceo.prm.model.orchestration.OrchestrationStatus;
 import dev.pulceo.prm.repository.OrchestrationContextRepository;
 import dev.pulceo.prm.repository.OrchestrationRepository;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +103,7 @@ public class OrchestrationService {
         return this.orchestrationRepository.findByName(name).isPresent();
     }
 
+    @Transactional
     public Orchestration updateOrchestrationStatus(String id, OrchestrationStatus newOrchestrationStatus) throws OrchestrationServiceException {
         Optional<Orchestration> optionalOrchestration = this.resolveOrchestration(id);
         if (optionalOrchestration.isPresent()) {
