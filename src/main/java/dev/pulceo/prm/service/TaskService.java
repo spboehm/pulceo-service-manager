@@ -117,7 +117,6 @@ public class TaskService {
         taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
 
         // set task scheduling properties
-        // this.enrichTaskSchedulingWithProperties(schedulingProperties);
         taskScheduling.setProperties(schedulingProperties);
 
         // TODO: inject sent scheduling properties into taskScheduling
@@ -144,19 +143,6 @@ public class TaskService {
         logger.debug("Created tasks with status NEW: {}", taskCounterCreated.incrementAndGet());
         // TODO: In case of status changes, schedule task directly
         return savedTask;
-    }
-
-    private void enrichTaskSchedulingWithProperties(Map<String, String> schedulingProperties) {
-        if (schedulingProperties.containsKey("PULCEO_OFFLOADING_PROTOCOL")) {
-            if (schedulingProperties.get("PULCEO_OFFLOADING_PROTOCOL").equalsIgnoreCase("MQTT")) {
-                return;
-            }
-            if (schedulingProperties.get("PULCEO_OFFLOADING_PROTOCOL").equalsIgnoreCase("HTTP")) {
-                return;
-            }
-        } else {
-            schedulingProperties.put("PULCEO_OFFLOADING_PROTOCOL", "MQTT");
-        }
     }
 
     private void issueNewTaskToUser(Task task) {
@@ -269,11 +255,8 @@ public class TaskService {
     }
 
     /* TaskStatusLogs */
-
     // TODO: add by task uuid
-
     // TODO: add by taskscheduling uuid
-
     public List<TaskStatusLog> readAllTaskStatusLogsByTaskId(Long id) {
         List<TaskStatusLog> taskStatusLogs = this.taskStatusLogRepository.findTaskStatusLogsByTaskId(id);
         if (taskStatusLogs.isEmpty()) {
@@ -331,26 +314,6 @@ public class TaskService {
                 }
             }
         });
-        /*threadPoolTaskExecutor.submit(() -> {
-            logger.info("Initializing task scheduling service...");
-            while (isRunning.get()) {
-                try {
-                    logger.info("TaskService is waiting for scheduling tasks");
-                    TaskScheduling taskScheduling = this.taskSchedulingQueueObjects.take();
-                    //String taskSchedulingUuid = this.taskSchedulingQueue.take();
-                    threadPoolTaskScheduler.submit(() -> {
-                        try {
-                            this.taskOffloader.offloadScheduledTasks(taskScheduling);
-                        } catch (InterruptedException | PnaApiException | TaskServiceException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                } catch (InterruptedException e) {
-                    logger.info("Initiate shutdown of task scheduling service...");
-                    this.isRunning.set(false);
-                }
-            }
-        });*/
     }
 
 }
