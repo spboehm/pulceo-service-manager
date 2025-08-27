@@ -61,6 +61,7 @@ public class TaskService {
     // TODO: Bean-based access and configuration
     // uuid of task scheduling
     private final BlockingQueue<String> taskSchedulingQueue = new ArrayBlockingQueue<>(1000);
+    private final BlockingQueue<TaskScheduling> taskSchedulingQueueObjects = new ArrayBlockingQueue<>(1000);
     private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
     private final TaskStatisticsService taskStatisticsService;
     private final TaskOffloader taskOffloader;
@@ -136,7 +137,7 @@ public class TaskService {
         // publish event to PMS via MQTT
         issueEventToPMS(EventType.fromTaskStatus(taskScheduling.getStatus()), savedTaskStatusLog);
         // publish task status log to pms via MQTT
-        issueTaskStatusLogToPMS(savedTaskStatusLog, taskScheduling);
+        issueTaskStatusLogToPMS(savedTask.getTaskSequenceNumber(), savedTask.getUuid().toString(), savedTaskStatusLog, taskScheduling);
         // issue to user
         issueNewTaskToUser(savedTask);
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
@@ -159,12 +160,11 @@ public class TaskService {
     }
 
     private void issueNewTaskToUser(Task task) {
-        this.logger.debug(task.toString());
         this.taskServiceChannel.send(new GenericMessage<>(TaskMessage.fromTask(task), new MessageHeaders(Map.of("mqtt_topic", "tasks/new"))));
     }
 
-    private void issueTaskStatusLogToPMS(TaskStatusLog savedTaskStatusLog, TaskScheduling taskScheduling) {
-        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(savedTaskStatusLog, taskScheduling.getProperties()), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
+    private void issueTaskStatusLogToPMS(long taskSequenceNumber, String taskUUID, TaskStatusLog savedTaskStatusLog, TaskScheduling taskScheduling) {
+        this.taskServiceChannel.send(new GenericMessage<>(TaskStatusLogMessage.fromTaskStatusLog(taskSequenceNumber, taskUUID, savedTaskStatusLog, taskScheduling.getProperties()), new MessageHeaders(Map.of("mqtt_topic", "dt/pulceo/tasks"))));
     }
 
     private void issueEventToPMS(EventType eventType, TaskStatusLog savedTaskStatusLog) throws InterruptedException {
@@ -231,8 +231,9 @@ public class TaskService {
             // publish event to PMS via MQTT
             issueEventToPMS(EventType.fromTaskStatus(taskScheduling.getStatus()), taskStatusLogScheduled);
             // publish task status log to pms via MQTT
-            issueTaskStatusLogToPMS(taskStatusLogScheduled, taskScheduling);
+            issueTaskStatusLogToPMS(task.getTaskSequenceNumber(), task.getUuid().toString(), taskStatusLogScheduled, taskScheduling);
             logger.info("Task scheduling with status {} added to queue with UUID: {}", savedTaskScheduling.getStatus(), savedTaskScheduling.getGlobalTaskUUID());
+            this.taskOffloader.offloadScheduledTasks(taskScheduling);
             return savedTaskScheduling;
         } else {
             throw new TaskServiceException("Status change not supported (yet)...");
@@ -241,6 +242,10 @@ public class TaskService {
 
     public void queueForScheduling(String taskSchedulingUuid) {
         this.taskSchedulingQueue.add(taskSchedulingUuid);
+    }
+
+    public void queueForScheduling(TaskScheduling taskScheduling) throws InterruptedException {
+        this.taskSchedulingQueueObjects.put(taskScheduling);
     }
 
     // for psm
@@ -326,15 +331,16 @@ public class TaskService {
                 }
             }
         });
-        threadPoolTaskExecutor.submit(() -> {
+        /*threadPoolTaskExecutor.submit(() -> {
             logger.info("Initializing task scheduling service...");
             while (isRunning.get()) {
                 try {
                     logger.info("TaskService is waiting for scheduling tasks");
-                    String taskSchedulingUuid = this.taskSchedulingQueue.take();
+                    TaskScheduling taskScheduling = this.taskSchedulingQueueObjects.take();
+                    //String taskSchedulingUuid = this.taskSchedulingQueue.take();
                     threadPoolTaskScheduler.submit(() -> {
                         try {
-                            this.taskOffloader.offloadScheduledTasks(taskSchedulingUuid);
+                            this.taskOffloader.offloadScheduledTasks(taskScheduling);
                         } catch (InterruptedException | PnaApiException | TaskServiceException e) {
                             throw new RuntimeException(e);
                         }
@@ -344,7 +350,7 @@ public class TaskService {
                     this.isRunning.set(false);
                 }
             }
-        });
+        });*/
     }
 
 }

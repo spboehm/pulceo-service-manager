@@ -72,7 +72,8 @@ public class TaskController {
         try {
             logger.info("Scheduling task with status %s".formatted(taskSchedulingDTO.toString()));
             TaskScheduling updatedTaskScheduling = this.taskService.updateTaskScheduling(id, TaskScheduling.fromTaskSchedulingDTO(taskSchedulingDTO));
-            this.taskService.queueForScheduling(updatedTaskScheduling.getUuid().toString());
+            //this.taskService.queueForScheduling(updatedTaskScheduling);
+            //this.taskService.queueForScheduling(updatedTaskScheduling.getUuid().toString());
 //            this.taskService.enqueue(updatedTaskScheduling.getUuid().toString());
             return ResponseEntity.status(200).body(TaskSchedulingDTO.from(updatedTaskScheduling));
         } catch (TaskServiceException e) {
