@@ -123,6 +123,8 @@ public class TaskOffloader {
             // offload to corresponding PNA, blocking operation
             // TODO: exception handling properly?
             CreateNewTaskOnPnaResponseDTO createNewTaskOnPnaResponseDTO = offloadToPNA(taskSchedulingToBeOffloaded.getTask().getUuid().toString(), taskSchedulingToBeOffloaded);
+            // create task status log
+            TaskStatusLog savedTaskStatusLog = this.logStatusChange(TaskStatus.OFFLOADED);
             // global task UUID already set
             taskSchedulingToBeOffloaded.setGlobalTaskUUID(createNewTaskOnPnaResponseDTO.getGlobalTaskUUID());
             taskSchedulingToBeOffloaded.setRemoteTaskUUID(createNewTaskOnPnaResponseDTO.getRemoteTaskUUID().toString());
@@ -133,8 +135,6 @@ public class TaskOffloader {
             // persist task scheduling logs
             Optional<Task> taskOptional = this.taskRepository.findByUuid(taskSchedulingToBeOffloaded.getTask().getUuid());
             Task task = taskOptional.get();
-            // create task status log
-            TaskStatusLog savedTaskStatusLog = this.logStatusChange(TaskStatus.OFFLOADED);
             // publish event to PMS via MQTT
             issueEventToPMS(EventType.fromTaskStatus(taskSchedulingToBeOffloaded.getStatus()), savedTaskStatusLog);
             // publish task status log to pms via MQTT

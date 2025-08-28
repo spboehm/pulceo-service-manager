@@ -60,6 +60,17 @@ tasks.register("bootRun-psm-dev") {
     finalizedBy("bootRun")
 }
 
+tasks.register("bootRun-psm-mqtt-public") {
+    group = "application"
+    description = "Runs psm with the mqtt-public profile"
+    doFirst {
+        tasks.bootRun.configure {
+            systemProperty("spring.profiles.active", "mqtt-public")
+        }
+    }
+    finalizedBy("bootRun")
+}
+
 tasks.register("bootRun-psm-dev-mqtt-public") {
     group = "application"
     description = "Runs psm with the dev-mqtt-public profile"
