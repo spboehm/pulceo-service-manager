@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class TaskService {
@@ -63,6 +64,7 @@ public class TaskService {
     private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
     private final TaskStatisticsService taskStatisticsService;
     private final TaskOffloader taskOffloader;
+    private final AtomicInteger taskCounterCreated = new AtomicInteger(0);
 
     @Value("${psm.uuid}")
     private String PSM_UUID;
@@ -112,7 +114,11 @@ public class TaskService {
         String previousStateOfTaskScheduling = taskScheduling.toString();
         taskScheduling.setStatus(TaskStatus.NEW);
         taskScheduling.setGlobalTaskUUID(task.getUuid().toString());
+
+        // set task scheduling properties
+        // this.enrichTaskSchedulingWithProperties(schedulingProperties);
         taskScheduling.setProperties(schedulingProperties);
+
         // TODO: inject sent scheduling properties into taskScheduling
         taskScheduling.addTask(task);
         task.setTaskScheduling(taskScheduling);
@@ -134,11 +140,26 @@ public class TaskService {
         // issue to user
         issueNewTaskToUser(savedTask);
         this.logger.debug("Send task status log message {} to PMS via MQTT", savedTaskStatusLog);
+        logger.debug("Created tasks with status NEW: {}", taskCounterCreated.incrementAndGet());
         // TODO: In case of status changes, schedule task directly
         return savedTask;
     }
 
+    private void enrichTaskSchedulingWithProperties(Map<String, String> schedulingProperties) {
+        if (schedulingProperties.containsKey("PULCEO_OFFLOADING_PROTOCOL")) {
+            if (schedulingProperties.get("PULCEO_OFFLOADING_PROTOCOL").equalsIgnoreCase("MQTT")) {
+                return;
+            }
+            if (schedulingProperties.get("PULCEO_OFFLOADING_PROTOCOL").equalsIgnoreCase("HTTP")) {
+                return;
+            }
+        } else {
+            schedulingProperties.put("PULCEO_OFFLOADING_PROTOCOL", "MQTT");
+        }
+    }
+
     private void issueNewTaskToUser(Task task) {
+        this.logger.debug(task.toString());
         this.taskServiceChannel.send(new GenericMessage<>(TaskMessage.fromTask(task), new MessageHeaders(Map.of("mqtt_topic", "tasks/new"))));
     }
 
@@ -254,6 +275,12 @@ public class TaskService {
             return new ArrayList<>();
         }
         return taskStatusLogs;
+    }
+
+    public void reset() {
+        this.taskStatusLogRepository.deleteAll();
+        this.taskSchedulingRepository.deleteAll();
+        this.taskRepository.deleteAll();
     }
 
 

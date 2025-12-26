@@ -1,7 +1,6 @@
 package dev.pulceo.prm.api.exception;
 
 public class PnaApiException extends Exception {
-
     public PnaApiException() {
     }
 

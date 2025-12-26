@@ -1,0 +1,171 @@
+package dev.pulceo.prm.service;
+
+import dev.pulceo.prm.api.PmsApi;
+import dev.pulceo.prm.api.PrmApi;
+import dev.pulceo.prm.api.PsmApi;
+import dev.pulceo.prm.api.dto.metricexports.MetricType;
+import dev.pulceo.prm.api.exception.PmsApiException;
+import dev.pulceo.prm.exception.OrchestrationServiceException;
+import dev.pulceo.prm.model.orchestration.Orchestration;
+import dev.pulceo.prm.model.orchestration.OrchestrationContext;
+import dev.pulceo.prm.repository.OrchestrationContextRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+public class OrchestrationServiceUnitTests {
+
+    @Mock
+    private PrmApi prmApi;
+
+    @Mock
+    private PsmApi psmApi;
+
+    @Mock
+    private PmsApi pmsApi;
+
+    @Mock
+    private OrchestrationContextRepository orchestrationContextRepository;
+
+    @Mock
+    private ReentrantLock lock;
+
+    @InjectMocks
+    private OrchestrationService orchestrationService;
+
+    @BeforeEach
+    public void setUp() {
+        ReflectionTestUtils.setField(orchestrationService, "psmDataDir", "/tmp/psm-data");
+    }
+
+    @Test
+    @Disabled
+    public void testCollectStaticOrchestrationData() throws OrchestrationServiceException, IOException {
+        // given
+//        when(this.prmApi.getAllProvidersRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-providers.json"));
+//        when(this.prmApi.getAllNodesRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-nodes.json"));
+//        when(this.prmApi.getAllLinksRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-links.json"));
+//        when(this.prmApi.getAllCpusRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-cpus.json"));
+//        when(this.prmApi.getAllMemoryRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-memory.json"));
+//        when(this.prmApi.getAllStorageRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/prmapi-get-all-storage.json"));
+//        when(this.psmApi.getAllApplicationsRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/psmapi-get-all-applications.json"));
+//        when(this.pmsApi.getAllMetricRequestsRaw()).thenReturn(this.readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-metric-requests.json"));
+        when(this.orchestrationContextRepository.findById(1L)).thenReturn(Optional.of(
+                OrchestrationContext.builder()
+                        .id(1L)
+                        .orchestration(
+                                Orchestration.builder()
+                                        .name("default")
+                                        .description("default")
+                                        .properties(Map.of("key1", "value1", "key2", "value2"))
+                                        .build())
+                        .build()));
+
+        when(this.lock.tryLock()).thenReturn(true);
+
+        OrchestrationContext orchestrationContext = this.orchestrationContextRepository.findById(1L).orElseThrow();
+        UUID orchestrationUuid = orchestrationContext.getOrchestration().getUuid();
+
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/prmapi-get-all-providers.json"))
+//                .when(prmApi).getAllProvidersRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/prmapi-get-all-nodes.json"))
+//                .when(prmApi).getAllNodesRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/prmapi-get-all-links.json"))
+//                .when(prmApi).getAllLinksRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/prmapi-get-all-cpus.json"))
+//                .when(prmApi).getAllCpusRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/prmapi-get-all-memory.json"))
+//                .when(prmApi).getAllMemoryRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/prmapi-get-all-storage.json"))
+//                .when(prmApi).getAllStorageRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/psmapi-get-all-applications.json"))
+//                .when(psmApi).getAllApplicationsRaw();
+//
+//        doAnswer(invocation -> readFileToBytes("src/test/resources/__files/api/pmsapi-get-all-metric-requests.json"))
+//                .when(pmsApi).getAllMetricRequestsRaw();
+
+
+        // when
+        this.orchestrationService.collectStaticOrchestrationData(orchestrationUuid, false);
+
+        // then
+        Path basePath = Path.of("/tmp/psm-data/raw", orchestrationUuid.toString());
+        assertTrue(Files.exists(basePath.resolve("PROVIDERS.json")));
+        assertTrue(Files.exists(basePath.resolve("NODES.json")));
+        assertTrue(Files.exists(basePath.resolve("LINKS.json")));
+        assertTrue(Files.exists(basePath.resolve("CPUS.json")));
+        assertTrue(Files.exists(basePath.resolve("MEMORY.json")));
+        assertTrue(Files.exists(basePath.resolve("STORAGE.json")));
+        assertTrue(Files.exists(basePath.resolve("APPLICATIONS.json")));
+        assertTrue(Files.exists(basePath.resolve("METRICS_REQUESTS.json")));
+    }
+
+    @Test
+    public void testCollectDynamicOrchestrationData() throws OrchestrationServiceException, IOException, PmsApiException {
+        // given
+        when(this.orchestrationContextRepository.findById(1L)).thenReturn(Optional.of(
+                OrchestrationContext.builder()
+                        .id(1L)
+                        .orchestration(
+                                Orchestration.builder()
+                                        .name("default")
+                                        .description("default")
+                                        .properties(Map.of("key1", "value1", "key2", "value2"))
+                                        .build())
+                        .build()));
+
+        OrchestrationContext orchestrationContext = this.orchestrationContextRepository.findById(1L).orElseThrow();
+        UUID orchestrationUuid = orchestrationContext.getOrchestration().getUuid();
+
+        doAnswer(
+                invocation -> {
+                    // Simulate the behavior of the requestAllCpuUtilizationRaw method
+                    Path basePath = Path.of("/tmp/psm-data/raw", orchestrationUuid.toString());
+                    Files.createDirectories(basePath);
+                    Files.copy(
+                            Path.of("src/test/resources/__files/api/pmsapi-get-all-cpu-utilization.csv"),
+                            basePath.resolve("CPU_UTIL.csv"),
+                            StandardCopyOption.REPLACE_EXISTING
+                    );
+                    return null;
+                }
+        ).when(this.pmsApi).requestMetric(orchestrationUuid, MetricType.CPU_UTIL, false);
+
+        // when
+        this.orchestrationService.collectDynamicOrchestrationData(orchestrationUuid, false);
+
+        // then
+        Path basePath = Path.of("/tmp/psm-data/raw", orchestrationUuid.toString());
+        assertTrue(Files.exists(basePath.resolve("CPU_UTIL.csv")));
+
+    }
+
+    private byte[] readFileToBytes(String filePath) throws IOException {
+        return Files.readAllBytes(Path.of(filePath));
+    }
+}

@@ -38,13 +38,9 @@ import java.util.UUID;
 public class TaskOffloader {
 
     private final Logger logger = LoggerFactory.getLogger(TaskOffloader.class);
-
     private final TaskRepository taskRepository;
-
     private final TaskSchedulingRepository taskSchedulingRepository;
-
     private final TaskStatusLogRepository taskStatusLogRepository;
-
     private final PublishSubscribeChannel taskServiceChannel;
 
     private final PrmApi prmApi;
@@ -67,7 +63,7 @@ public class TaskOffloader {
 
     public void updateTaskFromPna(String pnaUUID, UpdateTaskFromPNADTO updateTaskFromPNADTO) throws TaskServiceException {
         logger.info("Updating task, received from PNA with payload %s".formatted(updateTaskFromPNADTO.toString()));
-        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {
+        if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.RUNNING || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED || updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.FAILED) {
             // get task
             Optional<Task> taskOptional = this.taskRepository.findByUuid(UUID.fromString(updateTaskFromPNADTO.getGlobalTaskUUID()));
             if (taskOptional.isEmpty()) {
@@ -100,6 +96,7 @@ public class TaskOffloader {
                 issueTaskStatusLogToPMS(savedTaskStatusLog, taskSchedulingToBeUpdated);
                 // issue to user
                 // TODO: handle case running
+                // TODO: handle case failed
                 if (updateTaskFromPNADTO.getNewTaskStatus() == TaskStatus.COMPLETED) {
                     issueCompletedTaskToUser(task, TaskStatus.COMPLETED);
                 }
@@ -174,8 +171,9 @@ public class TaskOffloader {
                     .destinationApplicationComponentEndpoint(taskScheduling.getTask().getTaskMetaData().getDestinationApplicationComponentEndpoint())
                     .properties(taskScheduling.getTask().getProperties())
                     .build();
-            // note that this is an async operation, task will only be created on remote device (blocking), task changes are incoming asynchronously
+            // HTTP: note that this is an async operation, task will only be created on remote device (blocking), task changes are incoming asynchronously
             return this.pnaApi.createNewTaskOnPna(taskScheduling.getNodeId(), createNewTaskOnPna);
+            //return this.pnaApi.createNewTaskOnPnaWithMQTT(taskScheduling.getNodeId(), createNewTaskOnPna);
         } else if (taskScheduling.getStatus() == TaskStatus.OFFLOADED) {
             logger.warn("Update after offloading not supported yet");
         }

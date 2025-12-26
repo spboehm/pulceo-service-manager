@@ -263,4 +263,9 @@ public class ApplicationService {
     public Optional<Application> readApplicationByName(String id) {
         return this.applicationRepository.findByName(id);
     }
+
+    public void reset() {
+        this.applicationComponentRepository.deleteAll();
+        this.applicationRepository.deleteAll();
+    }
 }

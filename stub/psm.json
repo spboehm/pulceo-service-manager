@@ -1,0 +1,20 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "urlPathTemplate": "/api/v1/orchestration-context",
+        "method": "GET"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "uuid": "535aab93-b6e6-4e7c-b0a2-5cfca310e68d",
+          "name": "default"
+        }
+      }
+    }
+  ]
+}

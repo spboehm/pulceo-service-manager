@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="psm.json" type="WireMock" factoryName="WireMock">
+    <option name="port" value="7979" />
+    <option name="stubsFilePath" value="$PROJECT_DIR$/stub/psm.json" />
+    <method v="2" />
+  </configuration>
+</component>

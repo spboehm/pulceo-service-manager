@@ -47,16 +47,20 @@ public class ApplicationControllerIntegrationTests {
     }
 
     @BeforeAll
-    static void setupClass() throws InterruptedException {
-        Thread.sleep(1000);
+    static void setupClass() {
         ApplicationServiceIntegrationTests.wireMockServerForPRM.start();
         ApplicationServiceIntegrationTests.wireMockServerForPNA.start();
     }
 
     @AfterAll
     static void clean() {
-        ApplicationServiceIntegrationTests.wireMockServerForPRM.shutdown();
-        ApplicationServiceIntegrationTests.wireMockServerForPNA.shutdown();
+        if (ApplicationServiceIntegrationTests.wireMockServerForPRM.isRunning()) {
+            ApplicationServiceIntegrationTests.wireMockServerForPRM.stop();
+        }
+
+        if (ApplicationServiceIntegrationTests.wireMockServerForPNA.isRunning()) {
+            ApplicationServiceIntegrationTests.wireMockServerForPNA.stop();
+        }
     }
 
     @Test
